@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact — Kang Somaliza</title>
+  <meta name="description" content="Get in touch with Kang Somaliza — open to full-time roles and freelance design, content, and operations projects." />
+
+  <meta property="og:title" content="Contact — Kang Somaliza" />
+  <meta property="og:description" content="Open to full-time roles and freelance projects. Reach out anytime." />
+  <meta property="og:image" content="assets/profile.jpg" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%236B7A3A'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-size='17' font-weight='700' fill='%23F2EDE2'%3EKS%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="contact">
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__brand" aria-label="Kang Somaliza — home">
+        <span class="nav__brand-mark">KS</span>
+        <span class="nav__brand-name">Kang Somaliza</span>
+      </a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a href="about.html">About</a>
+        <a href="experience.html">Experience</a>
+        <a href="skills.html">Skills</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+
+      <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="section contact" id="contact">
+      <div class="section__inner">
+        <header class="section__header">
+          <span class="section__no">01</span>
+          <span class="section__divider"></span>
+          <span class="section__label">Contact</span>
+        </header>
+
+        <div class="contact__intro">
+          <h2 class="contact__title" id="contact-title">
+            Let&rsquo;s create<br />
+            something <em>together</em>.
+          </h2>
+
+          <div class="contact__side">
+            <p class="contact__lead" id="contact-lead">
+              Open to full-time roles and freelance projects. Drop a message below &mdash; I&rsquo;ll usually reply within a day.
+            </p>
+
+            <form class="contact-form" id="contact-form" novalidate>
+              <div class="contact-form__row">
+                <label class="contact-form__field">
+                  <span class="contact-form__label">Name</span>
+                  <input type="text" name="name" id="cf-name" autocomplete="name" required maxlength="200" />
+                </label>
+                <label class="contact-form__field">
+                  <span class="contact-form__label">Email</span>
+                  <input type="email" name="email" id="cf-email" autocomplete="email" required maxlength="200" />
+                </label>
+              </div>
+              <label class="contact-form__field">
+                <span class="contact-form__label">Message</span>
+                <textarea name="message" id="cf-message" rows="5" required maxlength="5000" placeholder="Tell me about your project or role&hellip;"></textarea>
+              </label>
+              <div class="contact-form__actions">
+                <button type="submit" class="btn btn--primary" id="cf-submit">
+                  Send message <span aria-hidden="true">→</span>
+                </button>
+                <a href="assets/cv.pdf" download class="btn btn--outline">Download Resume <span aria-hidden="true">↓</span></a>
+              </div>
+              <p class="contact-form__status" id="cf-status" role="status" aria-live="polite"></p>
+            </form>
+          </div>
+        </div>
+
+        <ul class="contact__list" id="contact-list">
+          <li>
+            <a href="mailto:lizakang123@gmail.com" class="contact-item">
+              <span class="contact-item__label">Email</span>
+              <span class="contact-item__value">lizakang123@gmail.com</span>
+              <span class="contact-item__arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="tel:+85511453444" class="contact-item">
+              <span class="contact-item__label">Phone</span>
+              <span class="contact-item__value">+855 11 453 444</span>
+              <span class="contact-item__arrow" aria-hidden="true">→</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://www.linkedin.com/in/kang-somaliza-643b1732a" target="_blank" rel="noopener" class="contact-item">
+              <span class="contact-item__label">LinkedIn</span>
+              <span class="contact-item__value">/kang-somaliza</span>
+              <span class="contact-item__arrow" aria-hidden="true">↗</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://t.me/k_somaliza" target="_blank" rel="noopener" class="contact-item">
+              <span class="contact-item__label">Telegram</span>
+              <span class="contact-item__value">@k_somaliza</span>
+              <span class="contact-item__arrow" aria-hidden="true">↗</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <span class="footer__mark">KS</span>
+        <span class="footer__name">Kang Somaliza</span>
+      </div>
+      <p class="footer__copy" id="footer-copy">&copy; 2026 Kang Somaliza <span class="footer__sep">·</span> Made in Phnom Penh</p>
+      <a href="#top" class="footer__top">Back to top <span aria-hidden="true">↑</span></a>
+    </div>
+  </footer>
+
+  <script type="module" src="content.js"></script>
+  <script src="script.js"></script>
+  <script type="module" src="contact.js"></script>
+</body>
+</html>

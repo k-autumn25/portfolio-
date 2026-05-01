@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin · Kang Somaliza</title>
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%236B7A3A'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-size='17' font-weight='700' fill='%23F2EDE2'%3EKS%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body class="admin">
+  <header class="admin__nav">
+    <a href="/" class="admin__brand">
+      <span class="nav__brand-mark">KS</span>
+      <span class="admin__brand-name">Admin Portal</span>
+    </a>
+    <div class="admin__nav-right" id="admin-nav-right"></div>
+  </header>
+
+  <!-- =========================================
+       SIGN-IN VIEW
+       ========================================= -->
+  <main class="admin__main admin__main--center" id="signin-view">
+    <section class="admin__signin">
+      <h1 class="admin__title">Sign in</h1>
+      <p class="admin__lead">Admin access is restricted to the site owner.</p>
+      <button class="btn btn--primary" id="signin-btn">
+        Sign in with Google <span aria-hidden="true">→</span>
+      </button>
+      <p class="admin__status" id="signin-status" role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <!-- =========================================
+       PORTAL VIEW
+       ========================================= -->
+  <div class="portal" id="portal-view" hidden>
+    <aside class="portal__sidebar">
+      <nav class="portal__nav" id="portal-nav" aria-label="Admin sections">
+        <!-- nav items injected by admin.js -->
+      </nav>
+      <a href="/" class="portal__view-link" target="_blank" rel="noopener">View site ↗</a>
+    </aside>
+
+    <main class="portal__main">
+      <div class="portal__subtabs" id="portal-subtabs" hidden>
+        <!-- sub-tab pills injected by admin.js when relevant -->
+      </div>
+      <div id="portal-main">
+        <!-- editor panels injected here -->
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,1233 @@
+import { db, auth, ADMIN_EMAIL } from "./firebase-config.js";
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  updateDoc,
+  getDocs,
+  serverTimestamp,
+  writeBatch,
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+import { SEED } from "./seed-data.js";
+
+// ==============================
+// DOM refs & helpers
+// ==============================
+const signinView = document.getElementById("signin-view");
+const portalView = document.getElementById("portal-view");
+const signinBtn = document.getElementById("signin-btn");
+const signinStatus = document.getElementById("signin-status");
+const navRight = document.getElementById("admin-nav-right");
+const portalMain = document.getElementById("portal-main");
+const portalNav = document.getElementById("portal-nav");
+const portalSubtabs = document.getElementById("portal-subtabs");
+
+const escapeHtml = (s) =>
+  String(s ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[c]);
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+const setSigninStatus = (text, kind) => {
+  signinStatus.textContent = text;
+  signinStatus.dataset.kind = kind || "";
+};
+
+const fmtDate = (ts) => {
+  if (!ts) return "—";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString(undefined, {
+    month: "short", day: "numeric", year: "numeric",
+    hour: "numeric", minute: "2-digit",
+  });
+};
+
+// Renders one save status next to a Save button
+const setStatus = (statusEl, text, kind) => {
+  if (!statusEl) return;
+  statusEl.textContent = text;
+  statusEl.dataset.kind = kind || "";
+  if (kind === "success") {
+    setTimeout(() => {
+      if (statusEl.dataset.kind === "success") {
+        statusEl.textContent = "";
+        statusEl.dataset.kind = "";
+      }
+    }, 3000);
+  }
+};
+
+// ==============================
+// Auth
+// ==============================
+signinBtn?.addEventListener("click", async () => {
+  setSigninStatus("Opening Google sign-in…", "pending");
+  signinBtn.disabled = true;
+  try {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    console.error(err);
+    setSigninStatus(err.message || "Sign-in failed.", "error");
+  } finally {
+    signinBtn.disabled = false;
+  }
+});
+
+const renderUserBadge = (user) => {
+  navRight.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "admin__user";
+  if (user.photoURL) {
+    const img = document.createElement("img");
+    img.src = user.photoURL;
+    img.alt = "";
+    wrap.appendChild(img);
+  }
+  const name = document.createElement("span");
+  name.textContent = user.email;
+  wrap.appendChild(name);
+
+  const out = document.createElement("button");
+  out.className = "admin__signout";
+  out.textContent = "Sign out";
+  out.addEventListener("click", () => signOut(auth));
+
+  navRight.appendChild(wrap);
+  navRight.appendChild(out);
+};
+
+// ==============================
+// Inbox subscription (badge updates + auto-rerender if open)
+// ==============================
+let messagesCache = [];
+let unsubscribeMessages = null;
+
+const subscribeMessages = () => {
+  const q = query(collection(db, "contact_messages"), orderBy("createdAt", "desc"));
+  unsubscribeMessages = onSnapshot(
+    q,
+    (snap) => {
+      messagesCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const badge = document.getElementById("inbox-badge");
+      if (badge) badge.textContent = snap.size > 0 ? String(snap.size) : "";
+      if (currentPage === "inbox") renderInbox();
+    },
+    (err) => console.error("Inbox snapshot error:", err)
+  );
+};
+
+// ==============================
+// Sidebar icons (Heroicons-style outline)
+// ==============================
+const ICONS = {
+  inbox: `<svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86c.85 0 1.65.46 2.06 1.21l.27.5a2.34 2.34 0 0 0 2.06 1.2h3.22a2.34 2.34 0 0 0 2.06-1.2l.27-.5a2.34 2.34 0 0 1 2.06-1.21h3.86M2.25 13.84V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.16c0-.22-.04-.45-.1-.66l-2.4-7.84a2.25 2.25 0 0 0-2.16-1.59H6.91a2.25 2.25 0 0 0-2.16 1.59l-2.4 7.84a2.25 2.25 0 0 0-.1.66Z"/></svg>`,
+  home: `<svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.95-8.96a1.5 1.5 0 0 1 2.12 0l8.96 8.96M4.5 9.75v10.13c0 .62.5 1.12 1.13 1.12H9.75v-6.38c0-.31.25-.56.56-.56h3.38c.31 0 .56.25.56.56v6.38h4.13c.62 0 1.12-.5 1.12-1.12V9.75M8.25 21h7.5"/></svg>`,
+  user: `<svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Zm-11.25 14.12c.42-3.84 3.66-6.83 7.5-6.83s7.08 2.99 7.5 6.83a23.85 23.85 0 0 1-15 0Z"/></svg>`,
+  briefcase: `<svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.07A2.25 2.25 0 0 1 18 20.47H6a2.25 2.25 0 0 1-2.25-2.25v-4.07m16.5 0a24.3 24.3 0 0 1-8.25 1.43c-2.97 0-5.83-.5-8.25-1.43m16.5 0v-1.91c0-1.18-.79-2.21-1.94-2.46a47.4 47.4 0 0 0-12.62 0 2.5 2.5 0 0 0-1.94 2.46v1.91M16.5 6V5.25A2.25 2.25 0 0 0 14.25 3h-4.5A2.25 2.25 0 0 0 7.5 5.25V6h9Z"/></svg>`,
+  skills: `<svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.65 2.65 0 1 0 21 17.25l-5.83-5.83m-3.75 3.75-5.83 5.83A2.65 2.65 0 1 1 1.85 14.5l5.83-5.83m3.74 6.34a23.5 23.5 0 0 1-3.74-3.74m3.74 3.74L7.67 8.67m0 0a23.5 23.5 0 0 1-3.75-7.61L2.78 2.19l7.61 3.75m-2.72 2.73 2.73-2.73m9.7 1.42a6.38 6.38 0 0 1-7.81 7.81L9.46 12.5a6.38 6.38 0 0 1 7.81-7.81l-3.6 3.6 2.83 2.84 3.6-3.6Z"/></svg>`,
+  contact: `<svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.12 2.99 2.7 3.21.96.13 1.93.22 2.91.27V21l4.34-4.34c.68 0 1.36-.04 2.04-.11 1.64-.18 2.74-1.6 2.74-3.21V8.79c0-1.61-1.1-3.04-2.74-3.21a48.4 48.4 0 0 0-10.27 0 3.21 3.21 0 0 0-2.74 3.21v3.97Z"/></svg>`,
+  settings: `<svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.59 3.94a1.13 1.13 0 0 1 1.11-.94h2.59c.55 0 1.02.4 1.11.94l.21 1.28c.09.55.46.99.97 1.21.39.18.77.39 1.13.62.45.31 1.04.4 1.55.21l1.21-.45c.51-.19 1.09 0 1.36.46l1.3 2.25c.27.46.16 1.04-.25 1.39l-.99.83c-.43.36-.62.92-.55 1.48.04.34.05.68.05 1.02s-.02.69-.05 1.02c-.07.56.13 1.12.55 1.48l.99.83c.4.34.51.93.24 1.39l-1.29 2.25c-.27.46-.85.66-1.36.46l-1.21-.45c-.51-.19-1.1-.1-1.55.21-.36.24-.74.45-1.13.63-.5.22-.88.66-.96 1.21l-.21 1.28c-.09.54-.56.94-1.1.94H10.7c-.55 0-1.02-.4-1.11-.94l-.21-1.28c-.09-.55-.46-.99-.96-1.21-.39-.18-.77-.39-1.13-.62-.45-.31-1.04-.4-1.55-.21l-1.21.45c-.51.19-1.09 0-1.36-.46l-1.3-2.25c-.27-.46-.16-1.04.25-1.39l.99-.83c.43-.36.62-.92.55-1.48a8.97 8.97 0 0 1 0-2.04c.07-.56-.13-1.12-.55-1.48l-.99-.83c-.4-.34-.51-.93-.24-1.39l1.29-2.25c.27-.46.85-.66 1.36-.46l1.21.45c.51.19 1.1.1 1.55-.21.36-.24.74-.45 1.13-.63.5-.22.88-.66.96-1.21l.21-1.28ZM15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>`,
+};
+
+// ==============================
+// Pages config (top-level groups + optional sub-tabs)
+// ==============================
+const PAGES = {
+  inbox:      { label: "Inbox",      icon: "inbox",     showBadge: true,  render: renderInbox },
+  home:       { label: "Home",       icon: "home",                        render: renderHeroEditor },
+  about:      { label: "About",      icon: "user",      subs: [
+    { id: "main",      label: "About",        render: renderAboutEditor },
+    { id: "education", label: "Education",    render: renderEducationEditor },
+  ]},
+  experience: { label: "Experience", icon: "briefcase", subs: [
+    { id: "services",  label: "Services",     render: renderServicesEditor },
+    { id: "workIntro", label: "Work Intro",   render: renderWorkIntroEditor },
+    { id: "projects",  label: "Projects",     render: renderProjectsEditor },
+    { id: "videos",    label: "Videos",       render: renderVideosEditor },
+    { id: "events",    label: "Events",       render: renderEventsEditor },
+    { id: "jobs",      label: "Past Roles",   render: renderExperienceEditor },
+  ]},
+  skills:     { label: "Skills",     icon: "skills",                      render: renderSkillsEditor },
+  contact:    { label: "Contact",    icon: "contact",   subs: [
+    { id: "main",      label: "Contact info", render: renderContactEditor },
+    { id: "footer",    label: "Footer",       render: renderFooterEditor },
+  ]},
+  settings:   { label: "Settings",   icon: "settings",                    render: renderSetup },
+};
+
+let currentPage = "inbox";
+let currentSub = null;
+
+// Build the sidebar from PAGES config (called once on auth)
+function buildSidebar() {
+  portalNav.innerHTML = Object.entries(PAGES).map(([id, p]) => `
+    <a class="portal__navlink" data-page="${id}" href="#${id}">
+      <span class="portal__navicon">${ICONS[p.icon] || ""}</span>
+      <span class="portal__navlabel">${p.label}</span>
+      ${p.showBadge ? `<span class="portal__badge" id="${id}-badge"></span>` : ""}
+    </a>
+  `).join("");
+}
+
+// Show a page (with optional sub-tab). If page has subs, renders the sub-tab pill bar.
+function showPage(pageId, subId) {
+  if (!PAGES[pageId]) pageId = "inbox";
+  const page = PAGES[pageId];
+  currentPage = pageId;
+
+  $$(".portal__navlink").forEach((a) => {
+    a.classList.toggle("is-active", a.dataset.page === pageId);
+  });
+
+  if (page.subs) {
+    const sub = page.subs.find((s) => s.id === subId) || page.subs[0];
+    currentSub = sub.id;
+    portalSubtabs.hidden = false;
+    portalSubtabs.innerHTML = page.subs.map((s) => `
+      <button type="button" class="portal__subtab ${s.id === sub.id ? "is-active" : ""}" data-sub="${s.id}">${s.label}</button>
+    `).join("");
+    const newHash = `#${pageId}/${sub.id}`;
+    if (location.hash !== newHash) history.replaceState(null, "", newHash);
+    sub.render();
+  } else {
+    currentSub = null;
+    portalSubtabs.hidden = true;
+    portalSubtabs.innerHTML = "";
+    const newHash = `#${pageId}`;
+    if (location.hash !== newHash) history.replaceState(null, "", newHash);
+    page.render();
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const navLink = e.target.closest(".portal__navlink");
+  if (navLink) {
+    e.preventDefault();
+    showPage(navLink.dataset.page);
+    return;
+  }
+  const subTab = e.target.closest(".portal__subtab");
+  if (subTab) {
+    showPage(currentPage, subTab.dataset.sub);
+  }
+});
+
+window.addEventListener("hashchange", () => {
+  const [page, sub] = location.hash.replace(/^#/, "").split("/");
+  showPage(page || "inbox", sub);
+});
+
+// ==============================
+// Auth state
+// ==============================
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    if (unsubscribeMessages) { unsubscribeMessages(); unsubscribeMessages = null; }
+    portalView.hidden = true;
+    signinView.hidden = false;
+    navRight.innerHTML = "";
+    setSigninStatus("", "");
+    return;
+  }
+  if (user.email !== ADMIN_EMAIL) {
+    setSigninStatus(`Access denied for ${user.email}. Only the site owner can use the admin portal.`, "error");
+    await signOut(auth);
+    return;
+  }
+  signinView.hidden = true;
+  portalView.hidden = false;
+  renderUserBadge(user);
+  buildSidebar();
+  subscribeMessages();
+  const [page, sub] = location.hash.replace(/^#/, "").split("/");
+  showPage(page || "inbox", sub);
+});
+
+// ==============================
+// Firestore helpers
+// ==============================
+const loadDoc = async (section) => {
+  const snap = await getDoc(doc(db, "site_content", section));
+  return snap.exists() ? snap.data() : null;
+};
+const saveDoc = (section, data) => setDoc(doc(db, "site_content", section), data, { merge: false });
+
+const loadCollection = async (name) => {
+  const snap = await getDocs(query(collection(db, name), orderBy("order", "asc")));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+// ==============================
+// Form helpers (build HTML)
+// ==============================
+const field = ({ label, name, type = "text", value = "", textarea = false, rows = 3, hint = "", placeholder = "" }) => {
+  const id = `f-${name}`;
+  const phAttr = placeholder ? ` placeholder="${escapeHtml(placeholder)}"` : "";
+  const input = textarea
+    ? `<textarea id="${id}" name="${name}" rows="${rows}"${phAttr}>${escapeHtml(value)}</textarea>`
+    : `<input type="${type}" id="${id}" name="${name}" value="${escapeHtml(value)}"${phAttr} />`;
+  return `
+    <label class="form__field">
+      <span class="form__label">${escapeHtml(label)}</span>
+      ${input}
+      ${hint ? `<span class="form__hint">${escapeHtml(hint)}</span>` : ""}
+    </label>`;
+};
+
+const checkboxField = ({ label, name, checked }) => `
+  <label class="form__check">
+    <input type="checkbox" name="${name}" ${checked ? "checked" : ""} />
+    <span>${escapeHtml(label)}</span>
+  </label>`;
+
+const formActions = (statusId = "form-status") => `
+  <div class="form__actions">
+    <button type="submit" class="btn btn--primary">Save changes</button>
+    <span class="form__status" id="${statusId}" role="status" aria-live="polite"></span>
+  </div>`;
+
+const editorHead = (title, lead) => `
+  <header class="editor__head">
+    <div>
+      <h1 class="editor__title">${escapeHtml(title)}</h1>
+      ${lead ? `<p class="editor__lead">${escapeHtml(lead)}</p>` : ""}
+    </div>
+  </header>`;
+
+// ==============================
+// Generic submit wrapper
+// ==============================
+const wireSave = (formId, statusId, handler) => {
+  const form = document.getElementById(formId);
+  if (!form) return;
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const status = document.getElementById(statusId);
+    const submit = form.querySelector('button[type="submit"]');
+    submit.disabled = true;
+    setStatus(status, "Saving…", "pending");
+    try {
+      await handler(new FormData(form), form);
+      setStatus(status, "Saved.", "success");
+    } catch (err) {
+      console.error(err);
+      setStatus(status, err.message || "Save failed.", "error");
+    } finally {
+      submit.disabled = false;
+    }
+  });
+};
+
+// ==============================
+// EDITORS
+// ==============================
+
+// ---------- Inbox ----------
+function renderInbox() {
+  if (!messagesCache.length) {
+    portalMain.innerHTML = `
+      ${editorHead("Inbox", "Messages submitted via the contact form on the public site.")}
+      <div class="empty">Your inbox is empty.</div>
+    `;
+    return;
+  }
+  portalMain.innerHTML = `
+    ${editorHead("Inbox", `${messagesCache.length} message${messagesCache.length === 1 ? "" : "s"} total.`)}
+    <ul class="messages">
+      ${messagesCache.map((m) => `
+        <li class="message" data-id="${m.id}">
+          <div class="message__head">
+            <span class="message__name">${escapeHtml(m.name || "(no name)")}</span>
+            <span class="message__meta">${escapeHtml(fmtDate(m.createdAt))}</span>
+          </div>
+          <div class="message__email"><a href="mailto:${encodeURIComponent(m.email || "")}">${escapeHtml(m.email || "")}</a></div>
+          <div class="message__body">${escapeHtml(m.message || "")}</div>
+          <div class="message__actions"><button type="button" class="message__delete" data-id="${m.id}">Delete</button></div>
+        </li>
+      `).join("")}
+    </ul>
+  `;
+  $$(".message__delete", portalMain).forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Delete this message?")) return;
+      try { await deleteDoc(doc(db, "contact_messages", btn.dataset.id)); }
+      catch (err) { alert("Delete failed: " + err.message); }
+    });
+  });
+}
+
+// ---------- Setup (one-time seed) ----------
+async function renderSetup() {
+  portalMain.innerHTML = `
+    ${editorHead("Setup", "First-time setup: copy the current portfolio's static content into Firestore so the admin editors have something to work with.")}
+    <div class="setup-card">
+      <h3>Initialize site content from seed</h3>
+      <p>Populates each section in Firestore with the original portfolio content — only fills sections that are empty, so it's safe to run more than once.</p>
+      <div class="form__actions" style="border:none; padding-top:0;">
+        <button class="btn btn--primary" id="seed-empty-btn">Initialize empty sections</button>
+        <span class="form__status" id="seed-status" role="status" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="setup-card" style="margin-top:18px; border-color:#e2c0a8;">
+      <h3>Reset everything to seed</h3>
+      <p>Overwrites <strong>all</strong> sections (including ones you've edited) with the original seed content. Use with caution.</p>
+      <div class="form__actions" style="border:none; padding-top:0;">
+        <button class="btn btn--outline" id="seed-overwrite-btn">Overwrite everything</button>
+      </div>
+    </div>
+  `;
+
+  const status = document.getElementById("seed-status");
+  document.getElementById("seed-empty-btn").addEventListener("click", () => runSeed({ overwrite: false, status }));
+  document.getElementById("seed-overwrite-btn").addEventListener("click", () => {
+    if (!confirm("This will overwrite all sections, projects, experience, and education with the seed data. Continue?")) return;
+    runSeed({ overwrite: true, status });
+  });
+}
+
+async function runSeed({ overwrite, status }) {
+  setStatus(status, "Seeding…", "pending");
+  try {
+    const sections = ["hero", "about", "services", "workIntro", "videos", "events", "skills", "contact", "footer"];
+    const results = [];
+    for (const s of sections) {
+      const existing = overwrite ? null : await loadDoc(s);
+      if (existing && !overwrite) { results.push(`${s}: skipped (exists)`); continue; }
+      await saveDoc(s, SEED[s]);
+      results.push(`${s}: written`);
+    }
+    // Collections
+    await seedCollection("projects", SEED.projects, overwrite, results);
+    await seedCollection("experience", SEED.experience, overwrite, results);
+    await seedCollection("education", SEED.education, overwrite, results);
+    setStatus(status, results.join(" · "), "success");
+  } catch (err) {
+    console.error(err);
+    setStatus(status, err.message || "Seed failed.", "error");
+  }
+}
+
+async function seedCollection(name, items, overwrite, results) {
+  const existing = await getDocs(collection(db, name));
+  if (existing.size > 0 && !overwrite) {
+    results.push(`${name}: skipped (${existing.size} docs exist)`);
+    return;
+  }
+  if (overwrite && existing.size > 0) {
+    const batch = writeBatch(db);
+    existing.docs.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+  for (const item of items) {
+    const { id, ...data } = item;
+    if (id) await setDoc(doc(db, name, id), data);
+    else await addDoc(collection(db, name), data);
+  }
+  results.push(`${name}: ${items.length} written`);
+}
+
+// ---------- Hero ----------
+async function renderHeroEditor() {
+  const data = (await loadDoc("hero")) || SEED.hero;
+  portalMain.innerHTML = `
+    ${editorHead("Hero", "The first thing visitors see.")}
+    <form class="form" id="hero-form">
+      ${checkboxField({ label: 'Show "Available for new projects" badge', name: "badgeEnabled", checked: !!data.badgeEnabled })}
+      ${field({ label: "Badge text", name: "badgeText", value: data.badgeText })}
+      ${field({ label: "Meta label (small text above title)", name: "metaLabel", value: data.metaLabel })}
+      <div class="form__row">
+        ${field({ label: "Title — line 1", name: "titleLine1", value: data.titleLine1 })}
+        ${field({ label: "Title — line 2 (accent)", name: "titleLine2", value: data.titleLine2 })}
+      </div>
+      ${field({ label: "Subtitle", name: "subtitle", value: data.subtitle })}
+      ${field({ label: "Tagline (paragraph under title)", name: "tagline", value: data.tagline, textarea: true, rows: 4 })}
+      ${field({ label: 'Photo caption year (next to "Est.")', name: "photoYear", value: data.photoYear })}
+      ${formActions("hero-status")}
+    </form>
+  `;
+  wireSave("hero-form", "hero-status", async (fd) => {
+    await saveDoc("hero", {
+      badgeEnabled: fd.get("badgeEnabled") === "on",
+      badgeText: fd.get("badgeText"),
+      metaLabel: fd.get("metaLabel"),
+      titleLine1: fd.get("titleLine1"),
+      titleLine2: fd.get("titleLine2"),
+      subtitle: fd.get("subtitle"),
+      tagline: fd.get("tagline"),
+      photoYear: fd.get("photoYear"),
+    });
+  });
+}
+
+// ---------- About ----------
+async function renderAboutEditor() {
+  const data = (await loadDoc("about")) || SEED.about;
+  portalMain.innerHTML = `
+    ${editorHead("About", "Quote, body paragraphs, and the four facts on the right.")}
+    <form class="form" id="about-form">
+      ${field({ label: "Quote (large heading)", name: "quote", value: data.quote, textarea: true, rows: 2 })}
+      ${field({ label: "Italicize which word/phrase inside the quote (optional)", name: "quoteEmphasis", value: data.quoteEmphasis, hint: "e.g. 'right' will italicize that word in the quote." })}
+      ${field({ label: "Body paragraph 1", name: "body1", value: data.body1, textarea: true, rows: 5 })}
+      ${field({ label: "Body paragraph 2", name: "body2", value: data.body2, textarea: true, rows: 4 })}
+      <div class="form__row">
+        ${field({ label: "Based in", name: "factBasedIn", value: data.factBasedIn, hint: "Use a newline for the second line" })}
+        ${field({ label: "Studying", name: "factStudying", value: data.factStudying })}
+      </div>
+      <div class="form__row">
+        ${field({ label: "Currently", name: "factCurrently", value: data.factCurrently })}
+        ${field({ label: "Languages", name: "factLanguages", value: data.factLanguages })}
+      </div>
+      ${formActions("about-status")}
+    </form>
+  `;
+  // textarea for factBasedIn — convert it to textarea by replacing
+  const basedIn = $('[name="factBasedIn"]', portalMain);
+  if (basedIn) {
+    const ta = document.createElement("textarea");
+    ta.name = "factBasedIn"; ta.rows = 2;
+    ta.value = data.factBasedIn || "";
+    basedIn.replaceWith(ta);
+  }
+  wireSave("about-form", "about-status", async (fd) => {
+    await saveDoc("about", {
+      quote: fd.get("quote"),
+      quoteEmphasis: fd.get("quoteEmphasis"),
+      body1: fd.get("body1"),
+      body2: fd.get("body2"),
+      factBasedIn: fd.get("factBasedIn"),
+      factStudying: fd.get("factStudying"),
+      factCurrently: fd.get("factCurrently"),
+      factLanguages: fd.get("factLanguages"),
+    });
+  });
+}
+
+// ---------- Services ----------
+async function renderServicesEditor() {
+  const data = (await loadDoc("services")) || SEED.services;
+  const items = Array.isArray(data.items) ? data.items : [];
+  portalMain.innerHTML = `
+    ${editorHead("Services", "The 'What I can do for you' section.")}
+    <form class="form" id="services-form">
+      ${field({ label: "Section title", name: "title", value: data.title })}
+      ${field({ label: "Italicize which word/phrase in title", name: "titleEmphasis", value: data.titleEmphasis })}
+      <div>
+        <span class="form__label" style="margin-bottom:8px; display:block;">Service items</span>
+        <div class="list-mgr" id="services-items">${items.map(serviceItemHtml).join("")}</div>
+        <button type="button" class="list-mgr__add" id="services-add" style="margin-top:12px;">+ Add service</button>
+      </div>
+      ${formActions("services-status")}
+    </form>
+  `;
+  bindListMgr("services-items", "services-add", () => serviceItemHtml({ no: "S/0X", title: "", desc: "" }));
+  wireSave("services-form", "services-status", async (fd) => {
+    const itemsRoot = document.getElementById("services-items");
+    const items = $$(".list-mgr__item", itemsRoot).map((row) => ({
+      no: $('[name="item-no"]', row).value.trim(),
+      title: $('[name="item-title"]', row).value.trim(),
+      desc: $('[name="item-desc"]', row).value.trim(),
+    })).filter((i) => i.title);
+    await saveDoc("services", {
+      title: fd.get("title"),
+      titleEmphasis: fd.get("titleEmphasis"),
+      items,
+    });
+  });
+}
+const serviceItemHtml = (s) => `
+  <div class="list-mgr__item">
+    <div class="list-mgr__item-head">
+      <span class="list-mgr__item-title">Service</span>
+      <div class="list-mgr__controls">
+        <button type="button" class="icon-btn" data-move="up">↑</button>
+        <button type="button" class="icon-btn" data-move="down">↓</button>
+        <button type="button" class="icon-btn icon-btn--danger" data-remove>Remove</button>
+      </div>
+    </div>
+    <div class="form__row">
+      <label class="form__field">
+        <span class="form__label">Number</span>
+        <input type="text" name="item-no" value="${escapeHtml(s.no)}" />
+      </label>
+      <label class="form__field">
+        <span class="form__label">Title</span>
+        <input type="text" name="item-title" value="${escapeHtml(s.title)}" />
+      </label>
+    </div>
+    <label class="form__field">
+      <span class="form__label">Description</span>
+      <textarea name="item-desc" rows="2">${escapeHtml(s.desc)}</textarea>
+    </label>
+  </div>`;
+
+// ---------- Work intro ----------
+async function renderWorkIntroEditor() {
+  const data = (await loadDoc("workIntro")) || SEED.workIntro;
+  portalMain.innerHTML = `
+    ${editorHead("Work — Intro", "Section title and the 'See the full archive' link below the projects.")}
+    <form class="form" id="workintro-form">
+      ${field({ label: "Section title", name: "title", value: data.title })}
+      ${field({ label: "Italicize which word/phrase in title", name: "titleEmphasis", value: data.titleEmphasis })}
+      <div class="form__row">
+        ${field({ label: "Archive link label", name: "archiveLabel", value: data.archiveLabel })}
+        ${field({ label: "Archive name (e.g. Unilinks Cambodia)", name: "archiveName", value: data.archiveName })}
+      </div>
+      <div class="form__row">
+        ${field({ label: "Archive meta (e.g. on Facebook)", name: "archiveMeta", value: data.archiveMeta })}
+        ${field({ label: "Archive URL", name: "archiveUrl", value: data.archiveUrl, type: "url" })}
+      </div>
+      ${formActions("workintro-status")}
+    </form>
+  `;
+  wireSave("workintro-form", "workintro-status", async (fd) => {
+    await saveDoc("workIntro", {
+      title: fd.get("title"),
+      titleEmphasis: fd.get("titleEmphasis"),
+      archiveLabel: fd.get("archiveLabel"),
+      archiveName: fd.get("archiveName"),
+      archiveMeta: fd.get("archiveMeta"),
+      archiveUrl: fd.get("archiveUrl"),
+    });
+  });
+}
+
+// ---------- Projects (CRUD) ----------
+async function renderProjectsEditor() {
+  const projects = await loadCollection("projects");
+  portalMain.innerHTML = `
+    ${editorHead("Projects", "Add, edit, reorder, or delete your work entries.")}
+    <div style="margin-bottom:18px;">
+      <button class="btn btn--primary" id="add-project-btn">+ Add new project</button>
+    </div>
+    <div id="projects-list-mgr">
+      ${projects.length === 0 ? '<div class="empty">No projects yet — click "Add new project" or run Setup → Initialize.</div>' : ""}
+      ${projects.map((p) => projectCardHtml(p)).join("")}
+    </div>
+  `;
+  document.getElementById("add-project-btn").addEventListener("click", () => addProject());
+  bindProjectCards();
+}
+
+const RATIO_OPTIONS = ["landscape", "square", "wide", "portrait"];
+const projectCardHtml = (p) => `
+  <article class="item-card" data-id="${escapeHtml(p.id)}">
+    <header class="item-card__head">
+      <h3 class="item-card__title">${escapeHtml(p.no || "")} — ${escapeHtml(p.title || "(untitled)")}</h3>
+      <div class="item-card__actions">
+        <button type="button" class="icon-btn" data-action="up">↑</button>
+        <button type="button" class="icon-btn" data-action="down">↓</button>
+        <button type="button" class="icon-btn icon-btn--danger" data-action="delete">Delete</button>
+      </div>
+    </header>
+    <form class="form" data-project-form>
+      <div class="form__row">
+        ${field({ label: "Number (e.g. P/01)", name: "no", value: p.no })}
+        ${field({ label: "Order (lower shows first)", name: "order", type: "number", value: p.order ?? 1 })}
+      </div>
+      ${field({ label: "Title", name: "title", value: p.title })}
+      ${field({ label: "Meta line (use ' / ' as separator)", name: "meta", value: p.meta, hint: "Example: Unilinks Global Education / Social Series / 2025" })}
+      ${field({ label: "Description", name: "desc", value: p.desc, textarea: true, rows: 3 })}
+      <div class="form__row">
+        <label class="form__field">
+          <span class="form__label">Grid columns</span>
+          <select name="cols">
+            <option value="3" ${p.cols === 3 ? "selected" : ""}>3 columns</option>
+            <option value="4" ${p.cols === 4 ? "selected" : ""}>4 columns</option>
+          </select>
+        </label>
+        <label class="form__field">
+          <span class="form__label">Image ratio</span>
+          <select name="ratio">
+            ${RATIO_OPTIONS.map((r) => `<option value="${r}" ${p.ratio === r ? "selected" : ""}>${r}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <div>
+        <span class="form__label" style="margin-bottom:8px; display:block;">Image URLs (paths or full URLs)</span>
+        <div class="img-urls" data-image-list>
+          ${(p.images || []).map(imgRowHtml).join("")}
+        </div>
+        <button type="button" class="list-mgr__add" data-add-image style="margin-top:8px;">+ Add image</button>
+        <p class="form__hint" style="margin-top:6px;">Local paths like <code>assets/work/myproject/img-1.png</code> work after uploading the file via FTP/redeploy. External URLs (https://…) work directly.</p>
+      </div>
+      <div class="form__actions">
+        <button type="submit" class="btn btn--primary">Save project</button>
+        <span class="form__status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+  </article>
+`;
+const imgRowHtml = (src = "") => `
+  <div class="img-urls__row">
+    <img class="img-urls__preview" src="${escapeHtml(src)}" alt="" onerror="this.style.opacity=0.3" />
+    <input type="text" name="image-url" value="${escapeHtml(src)}" placeholder="assets/work/.../image.png" />
+    <button type="button" class="icon-btn icon-btn--danger" data-remove-image>×</button>
+  </div>`;
+
+function bindProjectCards() {
+  $$(".item-card", portalMain).forEach((card) => {
+    const id = card.dataset.id;
+    const form = $("[data-project-form]", card);
+
+    // Add / remove image rows
+    $("[data-add-image]", card).addEventListener("click", () => {
+      $("[data-image-list]", card).insertAdjacentHTML("beforeend", imgRowHtml(""));
+    });
+    card.addEventListener("click", (e) => {
+      if (e.target.matches("[data-remove-image]")) {
+        e.target.closest(".img-urls__row").remove();
+      }
+    });
+    // Live-update image preview as user types
+    card.addEventListener("input", (e) => {
+      if (e.target.matches('input[name="image-url"]')) {
+        const img = e.target.previousElementSibling;
+        if (img) img.src = e.target.value;
+      }
+    });
+    // Reorder + delete
+    $$(".item-card__actions [data-action]", card).forEach((btn) => {
+      btn.addEventListener("click", () => handleProjectAction(id, btn.dataset.action, card));
+    });
+    // Save
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const status = $(".form__status", form);
+      const submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      setStatus(status, "Saving…", "pending");
+      try {
+        const images = $$('input[name="image-url"]', card).map((i) => i.value.trim()).filter(Boolean);
+        const data = {
+          no: $('[name="no"]', form).value.trim(),
+          title: $('[name="title"]', form).value.trim(),
+          meta: $('[name="meta"]', form).value.trim(),
+          desc: $('[name="desc"]', form).value.trim(),
+          cols: parseInt($('[name="cols"]', form).value, 10) || 3,
+          ratio: $('[name="ratio"]', form).value,
+          images,
+          order: parseInt($('[name="order"]', form).value, 10) || 1,
+        };
+        await setDoc(doc(db, "projects", id), data);
+        setStatus(status, "Saved.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus(status, err.message || "Save failed.", "error");
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  });
+}
+
+async function handleProjectAction(id, action, card) {
+  if (action === "delete") {
+    if (!confirm("Delete this project?")) return;
+    try { await deleteDoc(doc(db, "projects", id)); renderProjectsEditor(); }
+    catch (err) { alert("Delete failed: " + err.message); }
+  } else if (action === "up" || action === "down") {
+    try { await reorderItem("projects", id, action); renderProjectsEditor(); }
+    catch (err) { alert("Reorder failed: " + err.message); }
+  }
+}
+
+async function reorderItem(coll, id, direction) {
+  const items = await loadCollection(coll);
+  const idx = items.findIndex((i) => i.id === id);
+  const swap = direction === "up" ? idx - 1 : idx + 1;
+  if (swap < 0 || swap >= items.length) return;
+  const a = items[idx], b = items[swap];
+  const batch = writeBatch(db);
+  batch.update(doc(db, coll, a.id), { order: b.order });
+  batch.update(doc(db, coll, b.id), { order: a.order });
+  await batch.commit();
+}
+
+async function addProject() {
+  const slug = prompt("Short ID for this project (lowercase, hyphens only — e.g. 'new-campaign'):", "new-project");
+  if (!slug) return;
+  const cleanId = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
+  if (!cleanId) return;
+  const items = await loadCollection("projects");
+  const maxOrder = items.reduce((m, p) => Math.max(m, p.order || 0), 0);
+  try {
+    await setDoc(doc(db, "projects", cleanId), {
+      no: `P/${String(items.length + 1).padStart(2, "0")}`,
+      title: "New project",
+      meta: "",
+      desc: "",
+      cols: 3,
+      ratio: "landscape",
+      images: [],
+      order: maxOrder + 1,
+    });
+    renderProjectsEditor();
+  } catch (err) {
+    alert("Add failed: " + err.message + "\n\nTip: this ID may already exist. Try a different one.");
+  }
+}
+
+// ---------- Videos ----------
+async function renderVideosEditor() {
+  const data = (await loadDoc("videos")) || SEED.videos;
+  const items = data.items || [];
+  portalMain.innerHTML = `
+    ${editorHead("Videos", "Reels and video links shown under the work section.")}
+    <form class="form" id="videos-form">
+      <div>
+        <span class="form__label" style="margin-bottom:8px; display:block;">Video items</span>
+        <div class="list-mgr" id="videos-items">${items.map(videoItemHtml).join("")}</div>
+        <button type="button" class="list-mgr__add" id="videos-add" style="margin-top:12px;">+ Add video</button>
+      </div>
+      ${formActions("videos-status")}
+    </form>
+  `;
+  bindListMgr("videos-items", "videos-add", () => videoItemHtml({ title: "Unilinks Reel", num: "", url: "" }));
+  wireSave("videos-form", "videos-status", async () => {
+    const itemsRoot = document.getElementById("videos-items");
+    const items = $$(".list-mgr__item", itemsRoot).map((row) => ({
+      title: $('[name="item-title"]', row).value.trim(),
+      num: $('[name="item-num"]', row).value.trim(),
+      url: $('[name="item-url"]', row).value.trim(),
+    })).filter((i) => i.url);
+    await saveDoc("videos", { items });
+  });
+}
+const videoItemHtml = (v) => `
+  <div class="list-mgr__item">
+    <div class="list-mgr__item-head">
+      <span class="list-mgr__item-title">Video</span>
+      <div class="list-mgr__controls">
+        <button type="button" class="icon-btn" data-move="up">↑</button>
+        <button type="button" class="icon-btn" data-move="down">↓</button>
+        <button type="button" class="icon-btn icon-btn--danger" data-remove>Remove</button>
+      </div>
+    </div>
+    <div class="form__row">
+      ${field({ label: "Title", name: "item-title", value: v.title })}
+      ${field({ label: "Number (e.g. 01)", name: "item-num", value: v.num })}
+    </div>
+    ${field({ label: "URL", name: "item-url", value: v.url, type: "url" })}
+  </div>`;
+
+// ---------- Events ----------
+async function renderEventsEditor() {
+  const data = (await loadDoc("events")) || SEED.events;
+  const images = data.images || [];
+  portalMain.innerHTML = `
+    ${editorHead("Events", "The 'Behind the Scenes' image strip below the videos.")}
+    <form class="form" id="events-form">
+      ${field({ label: "Lead text", name: "lead", value: data.lead, textarea: true, rows: 2 })}
+      <div>
+        <span class="form__label" style="margin-bottom:8px; display:block;">Event images</span>
+        <div class="img-urls" id="events-images">${images.map(imgRowHtml).join("")}</div>
+        <button type="button" class="list-mgr__add" id="events-add" style="margin-top:8px;">+ Add image</button>
+      </div>
+      ${formActions("events-status")}
+    </form>
+  `;
+  document.getElementById("events-add").addEventListener("click", () => {
+    document.getElementById("events-images").insertAdjacentHTML("beforeend", imgRowHtml(""));
+  });
+  document.getElementById("events-images").addEventListener("click", (e) => {
+    if (e.target.matches("[data-remove-image]")) e.target.closest(".img-urls__row").remove();
+  });
+  document.getElementById("events-images").addEventListener("input", (e) => {
+    if (e.target.matches('input[name="image-url"]')) {
+      const img = e.target.previousElementSibling;
+      if (img) img.src = e.target.value;
+    }
+  });
+  wireSave("events-form", "events-status", async (fd) => {
+    const images = $$('#events-images input[name="image-url"]').map((i) => i.value.trim()).filter(Boolean);
+    await saveDoc("events", { lead: fd.get("lead"), images });
+  });
+}
+
+// ---------- Experience (CRUD) ----------
+async function renderExperienceEditor() {
+  const jobs = await loadCollection("experience");
+  portalMain.innerHTML = `
+    ${editorHead("Experience", "Add, edit, reorder, or delete past roles.")}
+    <div style="margin-bottom:18px;">
+      <button class="btn btn--primary" id="add-job-btn">+ Add new role</button>
+    </div>
+    <div>
+      ${jobs.length === 0 ? '<div class="empty">No experience entries yet.</div>' : ""}
+      ${jobs.map((j) => jobCardHtml(j)).join("")}
+    </div>
+  `;
+  document.getElementById("add-job-btn").addEventListener("click", addJob);
+  bindJobCards();
+}
+
+const jobCardHtml = (j) => `
+  <article class="item-card" data-id="${escapeHtml(j.id)}">
+    <header class="item-card__head">
+      <h3 class="item-card__title">${escapeHtml(j.company || "(untitled)")} — ${escapeHtml(j.role || "")}</h3>
+      <div class="item-card__actions">
+        <button type="button" class="icon-btn" data-action="up">↑</button>
+        <button type="button" class="icon-btn" data-action="down">↓</button>
+        <button type="button" class="icon-btn icon-btn--danger" data-action="delete">Delete</button>
+      </div>
+    </header>
+    <form class="form" data-job-form>
+      <div class="form__row">
+        ${field({ label: "Company", name: "company", value: j.company })}
+        ${field({ label: "Role", name: "role", value: j.role })}
+      </div>
+      <div class="form__row">
+        ${field({ label: "Period (e.g. 2024 — 2025)", name: "period", value: j.period })}
+        ${field({ label: "Location", name: "location", value: j.location })}
+      </div>
+      ${field({ label: "Lead (one-line intro)", name: "lead", value: j.lead, textarea: true, rows: 2 })}
+      ${field({ label: "Bullets (one per line)", name: "bullets", value: (j.bullets || []).join("\n"), textarea: true, rows: 6 })}
+      ${field({ label: "Order", name: "order", type: "number", value: j.order ?? 1 })}
+      <div class="form__actions">
+        <button type="submit" class="btn btn--primary">Save role</button>
+        <span class="form__status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+  </article>
+`;
+
+function bindJobCards() {
+  $$(".item-card", portalMain).forEach((card) => {
+    const id = card.dataset.id;
+    const form = $("[data-job-form]", card);
+    $$(".item-card__actions [data-action]", card).forEach((btn) => {
+      btn.addEventListener("click", () => handleJobAction(id, btn.dataset.action));
+    });
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const status = $(".form__status", form);
+      const submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      setStatus(status, "Saving…", "pending");
+      try {
+        const bullets = ($('[name="bullets"]', form).value || "").split("\n").map((l) => l.trim()).filter(Boolean);
+        const data = {
+          company: $('[name="company"]', form).value.trim(),
+          role: $('[name="role"]', form).value.trim(),
+          period: $('[name="period"]', form).value.trim(),
+          location: $('[name="location"]', form).value.trim(),
+          lead: $('[name="lead"]', form).value.trim(),
+          bullets,
+          order: parseInt($('[name="order"]', form).value, 10) || 1,
+        };
+        await setDoc(doc(db, "experience", id), data);
+        setStatus(status, "Saved.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus(status, err.message || "Save failed.", "error");
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  });
+}
+
+async function handleJobAction(id, action) {
+  if (action === "delete") {
+    if (!confirm("Delete this role?")) return;
+    try { await deleteDoc(doc(db, "experience", id)); renderExperienceEditor(); }
+    catch (err) { alert("Delete failed: " + err.message); }
+  } else {
+    try { await reorderItem("experience", id, action); renderExperienceEditor(); }
+    catch (err) { alert("Reorder failed: " + err.message); }
+  }
+}
+
+async function addJob() {
+  const slug = prompt("Short ID for this role (e.g. 'company-name'):", "new-role");
+  if (!slug) return;
+  const cleanId = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
+  if (!cleanId) return;
+  const items = await loadCollection("experience");
+  const maxOrder = items.reduce((m, p) => Math.max(m, p.order || 0), 0);
+  try {
+    await setDoc(doc(db, "experience", cleanId), {
+      company: "New company", role: "", period: "", location: "", lead: "",
+      bullets: [], order: maxOrder + 1,
+    });
+    renderExperienceEditor();
+  } catch (err) {
+    alert("Add failed: " + err.message);
+  }
+}
+
+// ---------- Education (CRUD) ----------
+async function renderEducationEditor() {
+  const items = await loadCollection("education");
+  portalMain.innerHTML = `
+    ${editorHead("Education", "Schools and education levels.")}
+    <div style="margin-bottom:18px;">
+      <button class="btn btn--primary" id="add-edu-btn">+ Add new entry</button>
+    </div>
+    <div>
+      ${items.length === 0 ? '<div class="empty">No education entries yet.</div>' : ""}
+      ${items.map(eduCardHtml).join("")}
+    </div>
+  `;
+  document.getElementById("add-edu-btn").addEventListener("click", addEdu);
+  bindEduCards();
+}
+
+const eduCardHtml = (e) => `
+  <article class="item-card" data-id="${escapeHtml(e.id)}">
+    <header class="item-card__head">
+      <h3 class="item-card__title">${escapeHtml(e.school || "(untitled)")} — ${escapeHtml(e.level || "")}</h3>
+      <div class="item-card__actions">
+        <button type="button" class="icon-btn" data-action="up">↑</button>
+        <button type="button" class="icon-btn" data-action="down">↓</button>
+        <button type="button" class="icon-btn icon-btn--danger" data-action="delete">Delete</button>
+      </div>
+    </header>
+    <form class="form" data-edu-form>
+      <div class="form__row">
+        ${field({ label: "Period (e.g. 2023 — Present)", name: "period", value: e.period })}
+        ${field({ label: "Order", name: "order", type: "number", value: e.order ?? 1 })}
+      </div>
+      ${field({ label: "School", name: "school", value: e.school })}
+      ${field({ label: "Level (e.g. University, High School)", name: "level", value: e.level })}
+      ${checkboxField({ label: "Currently studying here (highlights this entry)", name: "current", checked: !!e.current })}
+      <div class="form__actions">
+        <button type="submit" class="btn btn--primary">Save entry</button>
+        <span class="form__status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+  </article>
+`;
+
+function bindEduCards() {
+  $$(".item-card", portalMain).forEach((card) => {
+    const id = card.dataset.id;
+    const form = $("[data-edu-form]", card);
+    $$(".item-card__actions [data-action]", card).forEach((btn) => {
+      btn.addEventListener("click", () => handleEduAction(id, btn.dataset.action));
+    });
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const status = $(".form__status", form);
+      const submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      setStatus(status, "Saving…", "pending");
+      try {
+        await setDoc(doc(db, "education", id), {
+          period: $('[name="period"]', form).value.trim(),
+          school: $('[name="school"]', form).value.trim(),
+          level: $('[name="level"]', form).value.trim(),
+          current: $('[name="current"]', form).checked,
+          order: parseInt($('[name="order"]', form).value, 10) || 1,
+        });
+        setStatus(status, "Saved.", "success");
+      } catch (err) {
+        console.error(err);
+        setStatus(status, err.message || "Save failed.", "error");
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  });
+}
+
+async function handleEduAction(id, action) {
+  if (action === "delete") {
+    if (!confirm("Delete this entry?")) return;
+    try { await deleteDoc(doc(db, "education", id)); renderEducationEditor(); }
+    catch (err) { alert("Delete failed: " + err.message); }
+  } else {
+    try { await reorderItem("education", id, action); renderEducationEditor(); }
+    catch (err) { alert("Reorder failed: " + err.message); }
+  }
+}
+
+async function addEdu() {
+  const slug = prompt("Short ID for this entry (e.g. 'high-school'):", "new-edu");
+  if (!slug) return;
+  const cleanId = slug.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-");
+  if (!cleanId) return;
+  const items = await loadCollection("education");
+  const maxOrder = items.reduce((m, p) => Math.max(m, p.order || 0), 0);
+  try {
+    await setDoc(doc(db, "education", cleanId), {
+      period: "", school: "New school", level: "", current: false, order: maxOrder + 1,
+    });
+    renderEducationEditor();
+  } catch (err) {
+    alert("Add failed: " + err.message);
+  }
+}
+
+// ---------- Skills ----------
+async function renderSkillsEditor() {
+  const data = (await loadDoc("skills")) || SEED.skills;
+  portalMain.innerHTML = `
+    ${editorHead("Skills & Tools", "The 'toolkit' section.")}
+    <form class="form" id="skills-form">
+      ${field({ label: "Section title", name: "title", value: data.title })}
+      ${field({ label: "Italicize which word/phrase in title", name: "titleEmphasis", value: data.titleEmphasis })}
+      ${field({ label: "Soft Skills (one per line)", name: "soft", value: (data.soft || []).join("\n"), textarea: true, rows: 5 })}
+      ${field({ label: "Technical Skills (one per line)", name: "technical", value: (data.technical || []).join("\n"), textarea: true, rows: 5 })}
+      <div>
+        <span class="form__label" style="margin-bottom:8px; display:block;">Languages</span>
+        <div class="list-mgr" id="skills-langs">${(data.languages || []).map(langItemHtml).join("")}</div>
+        <button type="button" class="list-mgr__add" id="skills-langs-add" style="margin-top:12px;">+ Add language</button>
+      </div>
+      <div>
+        <span class="form__label" style="margin-bottom:8px; display:block;">Tools (under "Designed with")</span>
+        <div class="list-mgr" id="skills-tools">${(data.tools || []).map(toolItemHtml).join("")}</div>
+        <button type="button" class="list-mgr__add" id="skills-tools-add" style="margin-top:12px;">+ Add tool</button>
+      </div>
+      ${formActions("skills-status")}
+    </form>
+  `;
+  bindListMgr("skills-langs", "skills-langs-add", () => langItemHtml({ label: "", meta: "" }));
+  bindListMgr("skills-tools", "skills-tools-add", () => toolItemHtml({ mark: "", name: "" }));
+  wireSave("skills-form", "skills-status", async (fd) => {
+    const langs = $$("#skills-langs .list-mgr__item").map((row) => ({
+      label: $('[name="lang-label"]', row).value.trim(),
+      meta: $('[name="lang-meta"]', row).value.trim(),
+    })).filter((l) => l.label);
+    const tools = $$("#skills-tools .list-mgr__item").map((row) => ({
+      mark: $('[name="tool-mark"]', row).value.trim(),
+      name: $('[name="tool-name"]', row).value.trim(),
+    })).filter((t) => t.name);
+    const splitLines = (s) => (s || "").split("\n").map((l) => l.trim()).filter(Boolean);
+    await saveDoc("skills", {
+      title: fd.get("title"),
+      titleEmphasis: fd.get("titleEmphasis"),
+      soft: splitLines(fd.get("soft")),
+      technical: splitLines(fd.get("technical")),
+      languages: langs,
+      tools,
+    });
+  });
+}
+const langItemHtml = (l) => `
+  <div class="list-mgr__item">
+    <div class="list-mgr__item-head">
+      <span class="list-mgr__item-title">Language</span>
+      <div class="list-mgr__controls">
+        <button type="button" class="icon-btn" data-move="up">↑</button>
+        <button type="button" class="icon-btn" data-move="down">↓</button>
+        <button type="button" class="icon-btn icon-btn--danger" data-remove>Remove</button>
+      </div>
+    </div>
+    <div class="form__row">
+      ${field({ label: "Language", name: "lang-label", value: l.label })}
+      ${field({ label: "Meta (e.g. / Native)", name: "lang-meta", value: l.meta })}
+    </div>
+  </div>`;
+const toolItemHtml = (t) => `
+  <div class="list-mgr__item">
+    <div class="list-mgr__item-head">
+      <span class="list-mgr__item-title">Tool</span>
+      <div class="list-mgr__controls">
+        <button type="button" class="icon-btn" data-move="up">↑</button>
+        <button type="button" class="icon-btn" data-move="down">↓</button>
+        <button type="button" class="icon-btn icon-btn--danger" data-remove>Remove</button>
+      </div>
+    </div>
+    <div class="form__row">
+      ${field({ label: "Mark (2 letters, e.g. Cv)", name: "tool-mark", value: t.mark })}
+      ${field({ label: "Name (e.g. Canva)", name: "tool-name", value: t.name })}
+    </div>
+  </div>`;
+
+// ---------- Contact ----------
+async function renderContactEditor() {
+  const data = (await loadDoc("contact")) || SEED.contact;
+  portalMain.innerHTML = `
+    ${editorHead("Contact", "Section heading and the four contact links shown below the form.")}
+    <form class="form" id="contact-edit-form">
+      ${field({ label: "Section title", name: "title", value: data.title })}
+      ${field({ label: "Italicize which word/phrase in title", name: "titleEmphasis", value: data.titleEmphasis })}
+      ${field({ label: "Lead paragraph", name: "lead", value: data.lead, textarea: true, rows: 3 })}
+      ${field({ label: "Email address", name: "email", value: data.email, type: "email" })}
+      <div class="form__row">
+        ${field({ label: "Phone — display", name: "phoneDisplay", value: data.phoneDisplay })}
+        ${field({ label: "Phone — link href (digits only, with +)", name: "phoneHref", value: data.phoneHref })}
+      </div>
+      <div class="form__row">
+        ${field({ label: "LinkedIn URL", name: "linkedinUrl", value: data.linkedinUrl, type: "url" })}
+        ${field({ label: "LinkedIn — display text", name: "linkedinDisplay", value: data.linkedinDisplay })}
+      </div>
+      <div class="form__row">
+        ${field({ label: "Telegram URL", name: "telegramUrl", value: data.telegramUrl, type: "url" })}
+        ${field({ label: "Telegram — display text", name: "telegramDisplay", value: data.telegramDisplay })}
+      </div>
+      ${formActions("contact-status")}
+    </form>
+  `;
+  wireSave("contact-edit-form", "contact-status", async (fd) => {
+    await saveDoc("contact", {
+      title: fd.get("title"),
+      titleEmphasis: fd.get("titleEmphasis"),
+      lead: fd.get("lead"),
+      email: fd.get("email"),
+      phoneDisplay: fd.get("phoneDisplay"),
+      phoneHref: fd.get("phoneHref"),
+      linkedinUrl: fd.get("linkedinUrl"),
+      linkedinDisplay: fd.get("linkedinDisplay"),
+      telegramUrl: fd.get("telegramUrl"),
+      telegramDisplay: fd.get("telegramDisplay"),
+    });
+  });
+}
+
+// ---------- Footer ----------
+async function renderFooterEditor() {
+  const data = (await loadDoc("footer")) || SEED.footer;
+  portalMain.innerHTML = `
+    ${editorHead("Footer", "Copyright line at the bottom of the page.")}
+    <form class="form" id="footer-form">
+      ${field({ label: "Footer copy", name: "copy", value: data.copy })}
+      ${formActions("footer-status")}
+    </form>
+  `;
+  wireSave("footer-form", "footer-status", async (fd) => {
+    await saveDoc("footer", { copy: fd.get("copy") });
+  });
+}
+
+// ==============================
+// List manager (add / remove / reorder)
+// Used by services, videos, languages, tools
+// ==============================
+function bindListMgr(listId, addBtnId, makeNew) {
+  const list = document.getElementById(listId);
+  const addBtn = document.getElementById(addBtnId);
+  if (!list || !addBtn) return;
+  addBtn.addEventListener("click", () => list.insertAdjacentHTML("beforeend", makeNew()));
+  list.addEventListener("click", (e) => {
+    const item = e.target.closest(".list-mgr__item");
+    if (!item) return;
+    if (e.target.matches("[data-remove]")) {
+      item.remove();
+    } else if (e.target.matches('[data-move="up"]')) {
+      const prev = item.previousElementSibling;
+      if (prev) list.insertBefore(item, prev);
+    } else if (e.target.matches('[data-move="down"]')) {
+      const next = item.nextElementSibling;
+      if (next) list.insertBefore(next, item);
+    }
+  });
+}
+

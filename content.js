@@ -1,0 +1,315 @@
+import { db } from "./firebase-config.js";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+  query,
+  orderBy,
+} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+// ==============================
+// Helpers
+// ==============================
+const $ = (id) => document.getElementById(id);
+
+const escapeHtml = (s) =>
+  String(s ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[c]);
+
+// Wraps the chosen substring in <em>…</em>. Used for italic emphasis in titles.
+const emphasize = (text, emphasis) => {
+  const safe = escapeHtml(text);
+  if (!emphasis) return safe;
+  const safeEm = escapeHtml(emphasis);
+  return safe.replace(safeEm, `<em>${safeEm}</em>`);
+};
+
+const setText = (id, value) => {
+  const el = $(id);
+  if (el && value != null) el.textContent = value;
+};
+
+const setHTML = (id, value) => {
+  const el = $(id);
+  if (el && value != null) el.innerHTML = value;
+};
+
+const setHidden = (id, hidden) => {
+  const el = $(id);
+  if (el) el.hidden = !!hidden;
+};
+
+// Convert "Phnom Penh,\nCambodia" to "Phnom Penh,<br />Cambodia"
+const nl2br = (s) => escapeHtml(s).replace(/\n/g, "<br />");
+
+// ==============================
+// Section renderers
+// ==============================
+function renderHero(d) {
+  if (!d) return;
+  setText("hero-meta-label", d.metaLabel);
+  setText("hero-badge-text", d.badgeText);
+  setHidden("hero-badge", !d.badgeEnabled);
+  setText("hero-title-1", d.titleLine1);
+  setText("hero-title-2", d.titleLine2);
+  setText("hero-subtitle", d.subtitle);
+  setText("hero-tagline", d.tagline);
+  setText("hero-photo-year", d.photoYear);
+}
+
+function renderAbout(d) {
+  if (!d) return;
+  // Quote with optional emphasized word inside <em>
+  const quoteHtml = (() => {
+    const safe = escapeHtml(d.quote || "");
+    if (!d.quoteEmphasis) return safe;
+    return safe.replace(escapeHtml(d.quoteEmphasis), `<em>${escapeHtml(d.quoteEmphasis)}</em>`);
+  })();
+  setHTML("about-quote", quoteHtml);
+  setText("about-body-1", d.body1);
+  setText("about-body-2", d.body2);
+
+  const facts = $("about-facts");
+  if (facts) {
+    facts.innerHTML = `
+      <div class="fact"><dt>Based in</dt><dd>${nl2br(d.factBasedIn || "")}</dd></div>
+      <div class="fact"><dt>Studying</dt><dd>${escapeHtml(d.factStudying || "")}</dd></div>
+      <div class="fact"><dt>Currently</dt><dd>${escapeHtml(d.factCurrently || "")}</dd></div>
+      <div class="fact"><dt>Languages</dt><dd>${escapeHtml(d.factLanguages || "")}</dd></div>
+    `;
+  }
+}
+
+function renderServices(d) {
+  if (!d) return;
+  if (d.title) setHTML("services-title", emphasize(d.title, d.titleEmphasis) + ".");
+  const grid = $("services-grid");
+  if (!grid || !Array.isArray(d.items)) return;
+  grid.innerHTML = d.items.map((s) => `
+    <article class="service">
+      <span class="service__no">${escapeHtml(s.no || "")}</span>
+      <h3 class="service__title">${escapeHtml(s.title || "")}</h3>
+      <p class="service__desc">${escapeHtml(s.desc || "")}</p>
+    </article>
+  `).join("");
+}
+
+function renderWorkIntro(d) {
+  if (!d) return;
+  if (d.title) setHTML("work-title", emphasize(d.title, d.titleEmphasis));
+  const link = $("work-archive-link");
+  if (link && d.archiveUrl) link.href = d.archiveUrl;
+  setText("work-archive-label", d.archiveLabel);
+  setText("work-archive-name", d.archiveName);
+  setText("work-archive-meta", d.archiveMeta);
+}
+
+function renderProjects(items) {
+  const list = $("projects-list");
+  if (!list) return;
+  if (!items || !items.length) {
+    list.innerHTML = "";
+    return;
+  }
+  list.innerHTML = items.map((p) => {
+    const cols = p.cols === 4 ? "project__grid--4" : "project__grid--3";
+    const ratioClass = p.ratio ? `project__grid--${escapeHtml(p.ratio)}` : "";
+    const safeId = (p.id || "").replace(/[^a-z0-9-]/gi, "");
+    const images = (p.images || []).map((src, i) => `
+      <a class="project__img" href="${escapeHtml(src)}" target="_blank" rel="noopener">
+        <img src="${escapeHtml(src)}" alt="${escapeHtml(p.title || "")} image ${i + 1}" loading="lazy" />
+      </a>
+    `).join("");
+    return `
+      <article class="project" id="project-${safeId}">
+        <header class="project__header">
+          <span class="project__no">${escapeHtml(p.no || "")}</span>
+          <div class="project__heading">
+            <h3 class="project__title">${escapeHtml(p.title || "")}</h3>
+            <p class="project__meta">${escapeHtml(p.meta || "").replace(/\s\/\s/g, ' <span class="project__sep">/</span> ')}</p>
+          </div>
+        </header>
+        <p class="project__desc">${escapeHtml(p.desc || "")}</p>
+        <div class="project__grid ${cols} ${ratioClass}">${images}</div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderVideos(d) {
+  if (!d) return;
+  const grid = $("videos-grid");
+  if (!grid || !Array.isArray(d.items)) return;
+  grid.innerHTML = d.items.map((v) => `
+    <a class="video-card" href="${escapeHtml(v.url || "#")}" target="_blank" rel="noopener">
+      <span class="video-card__art" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </span>
+      <div>
+        <h4 class="video-card__title">${escapeHtml(v.title || "")} ${v.num ? `<em>No.&nbsp;${escapeHtml(v.num)}</em>` : ""}</h4>
+        <p class="video-card__meta">Watch on Facebook <span aria-hidden="true">→</span></p>
+      </div>
+    </a>
+  `).join("");
+}
+
+function renderEvents(d) {
+  if (!d) return;
+  setText("events-lead", d.lead);
+  const strip = $("events-strip");
+  if (!strip || !Array.isArray(d.images)) return;
+  strip.innerHTML = d.images.map((src, i) => `
+    <div class="events__img"><img src="${escapeHtml(src)}" alt="Event photo ${i + 1}" loading="lazy" /></div>
+  `).join("");
+}
+
+function renderExperience(items) {
+  const list = $("experience-list");
+  if (!list || !items || !items.length) return;
+  list.innerHTML = items.map((j) => `
+    <article class="job">
+      <header class="job__head">
+        <div class="job__company">
+          <h3 class="job__name">${escapeHtml(j.company || "")}</h3>
+          <p class="job__role">${escapeHtml(j.role || "")}</p>
+        </div>
+        <div class="job__when">
+          <p class="job__period">${escapeHtml(j.period || "")}</p>
+          <p class="job__loc">${escapeHtml(j.location || "")}</p>
+        </div>
+      </header>
+      ${j.lead ? `<p class="job__lead">${escapeHtml(j.lead)}</p>` : ""}
+      ${Array.isArray(j.bullets) && j.bullets.length ? `
+        <ul class="job__list">${j.bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+      ` : ""}
+    </article>
+  `).join("");
+}
+
+function renderEducation(items) {
+  const list = $("education-list");
+  if (!list || !items || !items.length) return;
+  list.innerHTML = items.map((e) => `
+    <li class="edu-item${e.current ? " edu-item--current" : ""}">
+      <span class="edu__period">${escapeHtml(e.period || "")}</span>
+      <h3 class="edu__school">${escapeHtml(e.school || "")}</h3>
+      <span class="edu__level">${escapeHtml(e.level || "")}</span>
+    </li>
+  `).join("");
+}
+
+function renderSkills(d) {
+  if (!d) return;
+  if (d.title) setHTML("skills-title", emphasize(d.title, d.titleEmphasis));
+  const grid = $("skills-grid");
+  if (grid) {
+    const col = (title, items, isLang) => `
+      <div class="skill-col">
+        <h3 class="skill-col__title">${escapeHtml(title)}</h3>
+        <ul class="skill-col__list">
+          ${(items || []).map((it) => isLang
+            ? `<li>${escapeHtml(it.label || "")} ${it.meta ? `<span class="skill-col__meta">${escapeHtml(it.meta)}</span>` : ""}</li>`
+            : `<li>${escapeHtml(it)}</li>`
+          ).join("")}
+        </ul>
+      </div>
+    `;
+    grid.innerHTML = col("Soft Skills", d.soft) + col("Technical", d.technical) + col("Languages", d.languages, true);
+  }
+  const tools = $("tools-grid");
+  if (tools && Array.isArray(d.tools)) {
+    tools.innerHTML = d.tools.map((t) => `
+      <div class="tool">
+        <span class="tool__mark">${escapeHtml(t.mark || "")}</span>
+        <span class="tool__name">${escapeHtml(t.name || "")}</span>
+      </div>
+    `).join("");
+  }
+}
+
+function renderContact(d) {
+  if (!d) return;
+  if (d.title) setHTML("contact-title", emphasize(d.title, d.titleEmphasis).replace(/^Let'?s create something /, "Let&rsquo;s create<br />something "));
+  setText("contact-lead", d.lead);
+  const list = $("contact-list");
+  if (!list) return;
+  const items = [];
+  if (d.email) items.push({ label: "Email", value: d.email, href: `mailto:${d.email}`, arrow: "→" });
+  if (d.phoneDisplay) items.push({ label: "Phone", value: d.phoneDisplay, href: `tel:${d.phoneHref || d.phoneDisplay}`, arrow: "→" });
+  if (d.linkedinUrl) items.push({ label: "LinkedIn", value: d.linkedinDisplay || d.linkedinUrl, href: d.linkedinUrl, arrow: "↗", external: true });
+  if (d.telegramUrl) items.push({ label: "Telegram", value: d.telegramDisplay || d.telegramUrl, href: d.telegramUrl, arrow: "↗", external: true });
+  list.innerHTML = items.map((it) => `
+    <li>
+      <a href="${escapeHtml(it.href)}" ${it.external ? 'target="_blank" rel="noopener"' : ""} class="contact-item">
+        <span class="contact-item__label">${escapeHtml(it.label)}</span>
+        <span class="contact-item__value">${escapeHtml(it.value)}</span>
+        <span class="contact-item__arrow" aria-hidden="true">${it.arrow}</span>
+      </a>
+    </li>
+  `).join("");
+}
+
+function renderFooter(d) {
+  if (!d) return;
+  setText("footer-copy", d.copy);
+}
+
+// ==============================
+// Loaders (gracefully no-op on missing data)
+// ==============================
+async function loadDoc(id) {
+  try {
+    const snap = await getDoc(doc(db, "site_content", id));
+    return snap.exists() ? snap.data() : null;
+  } catch (e) {
+    console.warn(`[content] Failed to load site_content/${id}:`, e.message);
+    return null;
+  }
+}
+
+async function loadCollection(name) {
+  try {
+    const snap = await getDocs(query(collection(db, name), orderBy("order", "asc")));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.warn(`[content] Failed to load ${name}:`, e.message);
+    return [];
+  }
+}
+
+async function init() {
+  const [hero, about, services, workIntro, videos, events, skills, contact, footer, projects, experience, education] = await Promise.all([
+    loadDoc("hero"),
+    loadDoc("about"),
+    loadDoc("services"),
+    loadDoc("workIntro"),
+    loadDoc("videos"),
+    loadDoc("events"),
+    loadDoc("skills"),
+    loadDoc("contact"),
+    loadDoc("footer"),
+    loadCollection("projects"),
+    loadCollection("experience"),
+    loadCollection("education"),
+  ]);
+
+  renderHero(hero);
+  renderAbout(about);
+  renderServices(services);
+  renderWorkIntro(workIntro);
+  if (projects && projects.length) renderProjects(projects);
+  renderVideos(videos);
+  renderEvents(events);
+  renderExperience(experience);
+  renderEducation(education);
+  renderSkills(skills);
+  renderContact(contact);
+  renderFooter(footer);
+
+  // Re-trigger reveal observer if script.js already initialized it
+  document.dispatchEvent(new CustomEvent("content:rendered"));
+}
+
+init();

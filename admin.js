@@ -168,7 +168,10 @@ const PAGES = {
     { id: "main",      label: "Contact info", render: renderContactEditor },
     { id: "footer",    label: "Footer",       render: renderFooterEditor },
   ]},
-  settings:   { label: "Settings",   icon: "settings",                    render: renderSetup },
+  settings:   { label: "Settings",   icon: "settings",   subs: [
+    { id: "main",      label: "Setup",        render: renderSetup },
+    { id: "resume",    label: "Resume / CV",  render: renderResumeEditor },
+  ]},
 };
 
 let currentPage = "inbox";
@@ -1231,3 +1234,140 @@ function bindListMgr(listId, addBtnId, makeNew) {
   });
 }
 
+// ==============================
+// Resume / CV editor
+// ==============================
+const MAX_CV_BYTES = 500 * 1024;
+
+const formatBytes = (n) => {
+  if (n == null) return "—";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(2)} MB`;
+};
+
+const fileToBase64 = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const result = String(reader.result || "");
+    const i = result.indexOf(",");
+    resolve(i >= 0 ? result.slice(i + 1) : result);
+  };
+  reader.onerror = () => reject(reader.error || new Error("Could not read the file."));
+  reader.readAsDataURL(file);
+});
+
+const base64ToBlob = (base64, type = "application/pdf") => {
+  const bytes = atob(base64);
+  const buf = new Uint8Array(bytes.length);
+  for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+  return new Blob([buf], { type });
+};
+
+async function renderResumeEditor() {
+  const cv = await loadDoc("cv");
+  const hasFile = !!(cv && cv.data && cv.enabled);
+
+  portalMain.innerHTML = `
+    ${editorHead("Resume / CV", "Upload your resume PDF here. The Download Resume button on your Home and Contact pages updates automatically. Delete it and the button hides until you upload a new one.")}
+
+    <div class="cv-card">
+      ${hasFile ? `
+        <div class="cv-card__row">
+          <div class="cv-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="32" height="32"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25M9 16.5v.75m3-3v3M15 12v5.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+          </div>
+          <div class="cv-card__info">
+            <p class="cv-card__name">${escapeHtml(cv.fileName || "resume.pdf")}</p>
+            <p class="cv-card__meta">${formatBytes(cv.size)} · Updated ${escapeHtml(fmtDate(cv.updatedAt))}</p>
+          </div>
+          <div class="cv-card__actions">
+            <button type="button" class="btn btn--outline" id="cv-preview-btn">Preview</button>
+            <button type="button" class="btn btn--outline cv-card__delete" id="cv-delete-btn">Delete</button>
+          </div>
+        </div>
+      ` : `
+        <div class="cv-card__empty">
+          <div class="cv-card__icon cv-card__icon--lg" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="48" height="48"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></svg>
+          </div>
+          <p class="cv-card__empty-title">No resume uploaded yet</p>
+          <p class="cv-card__empty-hint">When you upload a PDF, the "Download Resume" button on your Home and Contact pages will turn on automatically.</p>
+        </div>
+      `}
+
+      <div class="cv-card__upload">
+        <input type="file" accept="application/pdf,.pdf" id="cv-upload-input" hidden />
+        <button type="button" class="btn btn--primary" id="cv-upload-trigger">
+          ${hasFile ? "Upload new PDF" : "Upload PDF"}
+        </button>
+        <p class="cv-card__limit">Maximum file size: 500 KB. Tip: if your PDF is bigger, you can shrink it for free at smallpdf.com or ilovepdf.com.</p>
+        <p class="form__status" id="cv-status" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  `;
+
+  const fileInput = document.getElementById("cv-upload-input");
+  const trigger = document.getElementById("cv-upload-trigger");
+  const status = document.getElementById("cv-status");
+
+  trigger.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+      setStatus(status, "Please choose a PDF file.", "error");
+      fileInput.value = "";
+      return;
+    }
+    if (file.size > MAX_CV_BYTES) {
+      setStatus(status, `That file is ${formatBytes(file.size)} — too big. The max is 500 KB. Try compressing it at smallpdf.com first.`, "error");
+      fileInput.value = "";
+      return;
+    }
+
+    trigger.disabled = true;
+    setStatus(status, `Uploading ${escapeHtml(file.name)}…`, "pending");
+    try {
+      const data = await fileToBase64(file);
+      await saveDoc("cv", {
+        fileName: file.name,
+        size: file.size,
+        type: file.type || "application/pdf",
+        data,
+        enabled: true,
+        updatedAt: serverTimestamp(),
+      });
+      setStatus(status, "Uploaded! Your Download Resume button is now using this file.", "success");
+      setTimeout(renderResumeEditor, 700);
+    } catch (err) {
+      console.error(err);
+      setStatus(status, err.message || "Upload failed.", "error");
+      trigger.disabled = false;
+    }
+  });
+
+  document.getElementById("cv-preview-btn")?.addEventListener("click", () => {
+    if (!cv?.data) return;
+    const blob = base64ToBlob(cv.data, cv.type || "application/pdf");
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  });
+
+  document.getElementById("cv-delete-btn")?.addEventListener("click", async () => {
+    if (!confirm("Delete the resume?\n\nThe Download Resume button will hide on your live site until you upload a new PDF.")) return;
+    setStatus(status, "Deleting…", "pending");
+    try {
+      await saveDoc("cv", { enabled: false, updatedAt: serverTimestamp() });
+      setStatus(status, "Deleted.", "success");
+      setTimeout(renderResumeEditor, 600);
+    } catch (err) {
+      console.error(err);
+      setStatus(status, err.message || "Delete failed.", "error");
+    }
+  });
+}

@@ -256,6 +256,39 @@ function renderFooter(d) {
   setText("footer-copy", d.copy);
 }
 
+function renderCv(d) {
+  const buttons = document.querySelectorAll("[data-cv-download]");
+  if (!buttons.length) return;
+
+  if (!d) return;
+
+  if (d.enabled === false || !d.data) {
+    buttons.forEach((b) => { b.hidden = true; });
+    return;
+  }
+
+  try {
+    const bytes = atob(d.data);
+    const buf = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) buf[i] = bytes.charCodeAt(i);
+    const blob = new Blob([buf], { type: d.type || "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    buttons.forEach((b) => {
+      b.hidden = false;
+      b.href = url;
+      if (d.fileName) b.setAttribute("download", d.fileName);
+    });
+  } catch (e) {
+    console.warn("[content] Could not decode CV data:", e.message);
+  }
+}
+
+async function loadCvIfNeeded() {
+  if (!document.querySelector("[data-cv-download]")) return;
+  const cv = await loadDoc("cv");
+  renderCv(cv);
+}
+
 // ==============================
 // Loaders (gracefully no-op on missing data)
 // ==============================
@@ -307,6 +340,7 @@ async function init() {
   renderSkills(skills);
   renderContact(contact);
   renderFooter(footer);
+  loadCvIfNeeded();
 
   // Re-trigger reveal observer if script.js already initialized it
   document.dispatchEvent(new CustomEvent("content:rendered"));

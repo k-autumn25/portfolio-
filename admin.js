@@ -446,10 +446,15 @@ async function seedCollection(name, items, overwrite, results) {
 }
 
 // ---------- Hero ----------
+const MAX_HERO_PHOTO_BYTES = 700 * 1024;
+const HERO_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const DEFAULT_HERO_PHOTO = "assets/profile.jpg";
+
 async function renderHeroEditor() {
   const data = (await loadDoc("hero")) || SEED.hero;
   portalMain.innerHTML = `
     ${editorHead("Hero", "The first thing visitors see.")}
+    <div id="hero-photo-card"></div>
     <form class="form" id="hero-form">
       ${checkboxField({ label: 'Show "Available for new projects" badge', name: "badgeEnabled", checked: !!data.badgeEnabled })}
       ${field({ label: "Badge text", name: "badgeText", value: data.badgeText })}
@@ -464,6 +469,7 @@ async function renderHeroEditor() {
       ${formActions("hero-status")}
     </form>
   `;
+  await renderHeroPhotoCard();
   wireSave("hero-form", "hero-status", async (fd) => {
     await saveDoc("hero", {
       badgeEnabled: fd.get("badgeEnabled") === "on",
@@ -475,6 +481,98 @@ async function renderHeroEditor() {
       tagline: fd.get("tagline"),
       photoYear: fd.get("photoYear"),
     });
+  });
+}
+
+async function renderHeroPhotoCard() {
+  const card = document.getElementById("hero-photo-card");
+  if (!card) return;
+  const photo = await loadDoc("heroPhoto");
+  const hasFile = !!(photo && photo.data && photo.enabled);
+  const previewSrc = hasFile
+    ? `data:${photo.type || "image/jpeg"};base64,${photo.data}`
+    : DEFAULT_HERO_PHOTO;
+
+  card.innerHTML = `
+    <div class="cv-card">
+      <div class="cv-card__row">
+        <div class="hero-photo-preview">
+          <img src="${escapeHtml(previewSrc)}" alt="Current profile photo" />
+        </div>
+        <div class="cv-card__info">
+          <p class="cv-card__name">${hasFile ? escapeHtml(photo.fileName || "profile photo") : "Using default photo"}</p>
+          <p class="cv-card__meta">${hasFile ? `${formatBytes(photo.size)} · Updated ${escapeHtml(fmtDate(photo.updatedAt))}` : "No custom photo uploaded yet"}</p>
+        </div>
+        <div class="cv-card__actions">
+          ${hasFile ? `<button type="button" class="btn btn--outline cv-card__delete" id="hero-photo-delete">Delete</button>` : ""}
+        </div>
+      </div>
+      <div class="cv-card__upload">
+        <input type="file" accept="image/jpeg,image/png,image/webp" id="hero-photo-input" hidden />
+        <button type="button" class="btn btn--primary" id="hero-photo-trigger">
+          ${hasFile ? "Upload new photo" : "Upload photo"}
+        </button>
+        <p class="cv-card__limit">JPEG, PNG, or WebP. Maximum file size: 700 KB. Tip: if your photo is bigger, you can shrink it for free at tinypng.com.</p>
+        <p class="form__status" id="hero-photo-status" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  `;
+
+  const fileInput = document.getElementById("hero-photo-input");
+  const trigger = document.getElementById("hero-photo-trigger");
+  const status = document.getElementById("hero-photo-status");
+
+  trigger.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+
+    const isImage = HERO_PHOTO_TYPES.includes(file.type)
+      || /\.(jpe?g|png|webp)$/i.test(file.name);
+    if (!isImage) {
+      setStatus(status, "Please choose a JPEG, PNG, or WebP image.", "error");
+      fileInput.value = "";
+      return;
+    }
+    if (file.size > MAX_HERO_PHOTO_BYTES) {
+      setStatus(status, `That file is ${formatBytes(file.size)} — too big. The max is 700 KB. Try compressing it at tinypng.com first.`, "error");
+      fileInput.value = "";
+      return;
+    }
+
+    trigger.disabled = true;
+    setStatus(status, `Uploading ${escapeHtml(file.name)}…`, "pending");
+    try {
+      const dataB64 = await fileToBase64(file);
+      await saveDoc("heroPhoto", {
+        fileName: file.name,
+        size: file.size,
+        type: file.type || "image/jpeg",
+        data: dataB64,
+        enabled: true,
+        updatedAt: serverTimestamp(),
+      });
+      setStatus(status, "Uploaded! Your home screen photo has been updated.", "success");
+      setTimeout(renderHeroPhotoCard, 700);
+    } catch (err) {
+      console.error(err);
+      setStatus(status, err.message || "Upload failed.", "error");
+      trigger.disabled = false;
+    }
+  });
+
+  document.getElementById("hero-photo-delete")?.addEventListener("click", async () => {
+    if (!confirm("Delete the profile photo?\n\nYour home screen will go back to using the default photo (assets/profile.jpg) until you upload a new one.")) return;
+    setStatus(status, "Deleting…", "pending");
+    try {
+      await saveDoc("heroPhoto", { enabled: false, updatedAt: serverTimestamp() });
+      setStatus(status, "Deleted.", "success");
+      setTimeout(renderHeroPhotoCard, 600);
+    } catch (err) {
+      console.error(err);
+      setStatus(status, err.message || "Delete failed.", "error");
+    }
   });
 }
 

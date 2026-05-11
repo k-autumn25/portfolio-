@@ -59,6 +59,12 @@ function renderHero(d) {
   setText("hero-photo-year", d.photoYear);
 }
 
+function renderHeroPhoto(p) {
+  if (!p || !p.enabled || !p.data) return;
+  const img = document.querySelector(".hero__photo img");
+  if (img) img.src = `data:${p.type || "image/jpeg"};base64,${p.data}`;
+}
+
 function renderAbout(d) {
   if (!d) return;
   // Quote with optional emphasized word inside <em>
@@ -313,8 +319,9 @@ async function loadCollection(name) {
 }
 
 async function init() {
-  const [hero, about, services, workIntro, videos, events, skills, contact, footer, projects, experience, education] = await Promise.all([
+  const [hero, heroPhoto, about, services, workIntro, videos, events, skills, contact, footer, projects, experience, education] = await Promise.all([
     loadDoc("hero"),
+    loadDoc("heroPhoto"),
     loadDoc("about"),
     loadDoc("services"),
     loadDoc("workIntro"),
@@ -329,6 +336,7 @@ async function init() {
   ]);
 
   renderHero(hero);
+  renderHeroPhoto(heroPhoto);
   renderAbout(about);
   renderServices(services);
   renderWorkIntro(workIntro);

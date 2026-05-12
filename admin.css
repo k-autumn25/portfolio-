@@ -740,6 +740,10 @@
   border-color: var(--olive);
   outline: none;
 }
+[data-theme="dark"] .admin select option {
+  background-color: #1a1a1a;
+  color: #f5f1e8;
+}
 [data-theme="dark"] .admin input::placeholder,
 [data-theme="dark"] .admin textarea::placeholder {
   color: var(--ink-3);

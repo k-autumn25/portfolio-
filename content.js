@@ -53,7 +53,10 @@ function renderHero(d) {
   setText("hero-badge-text", d.badgeText);
   setHidden("hero-badge", !d.badgeEnabled);
   setText("hero-title-1", d.titleLine1);
-  setText("hero-title-2", d.titleLine2);
+  // Strip trailing punctuation on the outlined name line. A period rendered
+  // as outline-only looks like a stray dot, which is not what we want.
+  const line2 = String(d.titleLine2 || "").replace(/[.!?]+$/, "");
+  setText("hero-title-2", line2);
   setText("hero-subtitle", d.subtitle);
   setText("hero-tagline", d.tagline);
   setText("hero-photo-year", d.photoYear);

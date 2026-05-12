@@ -1,4 +1,29 @@
 /* ============================
+   Theme toggle (light / dark)
+   Runs on every page. Initial value set by inline head script
+   to avoid flash. This handles the click + localStorage save.
+   ============================ */
+(() => {
+  const root = document.documentElement;
+  const toggles = document.querySelectorAll('.theme-toggle');
+  if (!toggles.length) return;
+
+  toggles.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      if (next === 'dark') {
+        root.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        root.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  });
+})();
+
+
+/* ============================
    Navigation
    ============================ */
 const nav = document.getElementById('nav');
@@ -113,3 +138,138 @@ function setupReveals() {
 
 setupReveals();
 document.addEventListener('content:rendered', setupReveals);
+
+
+/* ============================
+   Shared premium effects (all pages)
+   Cursor glow follower + reveal-mask scroll observer.
+   Background blobs/wash run via CSS keyframes — no JS needed.
+   ============================ */
+const _premium = (() => {
+  const isTouch = window.matchMedia('(hover: none)').matches;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- Cursor glow (any page that has #cursorGlow) ---- */
+  const glow = document.getElementById('cursorGlow');
+  if (!isTouch && !prefersReducedMotion && glow) {
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let glowX = mouseX;
+    let glowY = mouseY;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      glow.classList.add('is-active');
+    });
+    window.addEventListener('mouseleave', () => glow.classList.remove('is-active'));
+    (function tick() {
+      glowX += (mouseX - glowX) * 0.12;
+      glowY += (mouseY - glowY) * 0.12;
+      glow.style.transform = `translate(${glowX}px, ${glowY}px) translate(-50%, -50%)`;
+      requestAnimationFrame(tick);
+    })();
+  }
+
+  /* ---- Scroll-reveal observer for cards, CTA, and reveal-masks.
+         Tracks seen elements so we don't double-observe after a re-render. ---- */
+  const seen = new WeakSet();
+  let revealObserver = null;
+  if ('IntersectionObserver' in window) {
+    revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.18, rootMargin: '0px 0px -8% 0px' });
+  }
+  function attachReveals() {
+    document.querySelectorAll('.card, .cta, .reveal-mask').forEach((el) => {
+      if (seen.has(el)) return;
+      seen.add(el);
+      if (revealObserver) revealObserver.observe(el);
+      else el.classList.add('is-visible');
+    });
+  }
+  attachReveals();
+  document.addEventListener('content:rendered', attachReveals);
+
+  return { isTouch, prefersReducedMotion, attachReveals };
+})();
+
+
+/* ============================
+   Homepage-only effects
+   Parallax, letter split, 3D card tilt
+   ============================ */
+(() => {
+  if (document.body.dataset.page !== 'home') return;
+
+  const { isTouch, prefersReducedMotion } = _premium;
+
+  /* ---- Subtle parallax on hero text + photo ---- */
+  if (!prefersReducedMotion) {
+    const heroText = document.getElementById('heroText');
+    const heroMedia = document.getElementById('heroMedia');
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      if (heroText) heroText.style.transform = `translateY(${y * 0.08}px)`;
+      if (heroMedia) heroMedia.style.transform = `translateY(${y * -0.05}px)`;
+    }, { passive: true });
+  }
+
+  /* ---- Letter-by-letter hero title split.
+         Runs after content.js renders the title text from Firestore so
+         we don't get our spans wiped out by a setText call. ---- */
+  let titleSplit = false;
+  function splitHeroTitle() {
+    if (titleSplit) return;
+    const lines = document.querySelectorAll('.hero--v2 .hero__title-line');
+    if (!lines.length) return;
+    lines.forEach((line, lineIdx) => {
+      const text = line.textContent;
+      line.textContent = '';
+      [...text].forEach((ch, i) => {
+        const span = document.createElement('span');
+        span.className = 'hero__char';
+        if (ch === ' ') span.setAttribute('data-space', '1');
+        else span.textContent = ch;
+        const base = 0.25 + lineIdx * 0.18;
+        span.style.animationDelay = `${(base + i * 0.05).toFixed(2)}s`;
+        line.appendChild(span);
+      });
+    });
+    titleSplit = true;
+  }
+  document.addEventListener('content:rendered', splitHeroTitle);
+  // Fallback if Firestore is slow/offline
+  setTimeout(splitHeroTitle, 1500);
+
+  /* ---- 3D tilt on work cards (re-attaches when cards re-render) ---- */
+  if (!isTouch && !prefersReducedMotion) {
+    const tilted = new WeakSet();
+    function attachTilt() {
+      document.querySelectorAll('.card').forEach((card) => {
+        if (tilted.has(card)) return;
+        tilted.add(card);
+        let rafId = null;
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = (e.clientX - rect.left) / rect.width - 0.5;
+          const y = (e.clientY - rect.top) / rect.height - 0.5;
+          if (rafId) cancelAnimationFrame(rafId);
+          rafId = requestAnimationFrame(() => {
+            card.style.transform = `translateY(-8px) rotateX(${y * -5}deg) rotateY(${x * 6}deg)`;
+          });
+        });
+        card.addEventListener('mouseleave', () => {
+          if (rafId) cancelAnimationFrame(rafId);
+          card.style.transform = '';
+        });
+      });
+    }
+    attachTilt();
+    document.addEventListener('content:rendered', attachTilt);
+  }
+})();

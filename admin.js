@@ -450,8 +450,31 @@ const MAX_HERO_PHOTO_BYTES = 700 * 1024;
 const HERO_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const DEFAULT_HERO_PHOTO = "assets/profile.jpg";
 
+// Defaults for the new homepage editors (used as fallback if Firestore doc missing)
+const DEFAULT_HOME_FEATURED = {
+  title: "Selected projects.",
+  titleEmphasis: "projects.",
+  lead: "A few campaigns from the last year — social series, brand illustrations, and product launches designed for Unilinks Global Education.",
+};
+const DEFAULT_HIRE_CTA = {
+  label: "Let's work together",
+  title: "Have a project in mind?",
+  titleEmphasis: "in mind?",
+  lead: "Open to full-time roles, freelance gigs, and friendly collaborations. If you need someone to bring your brand or campaign to life, let's talk.",
+  buttonText: "Hire Me",
+  buttonHref: "contact.html",
+};
+
 async function renderHeroEditor() {
-  const data = (await loadDoc("hero")) || SEED.hero;
+  const [hero, featured, hireCta] = await Promise.all([
+    loadDoc("hero"),
+    loadDoc("homeFeatured"),
+    loadDoc("hireCta"),
+  ]);
+  const data = hero || SEED.hero;
+  const featuredData = featured || DEFAULT_HOME_FEATURED;
+  const hireData = hireCta || DEFAULT_HIRE_CTA;
+
   portalMain.innerHTML = `
     ${editorHead("Hero", "The first thing visitors see.")}
     <div id="hero-photo-card"></div>
@@ -468,8 +491,31 @@ async function renderHeroEditor() {
       ${field({ label: 'Photo caption year (next to "Est.")', name: "photoYear", value: data.photoYear })}
       ${formActions("hero-status")}
     </form>
+
+    ${editorHead("Featured Work intro", "The 'Selected projects.' section header and lead paragraph on your home page.")}
+    <form class="form" id="home-featured-form">
+      ${field({ label: "Section title", name: "title", value: featuredData.title, hint: "The big serif heading. Example: 'Selected projects.'" })}
+      ${field({ label: "Word to italicize in olive", name: "titleEmphasis", value: featuredData.titleEmphasis, hint: "Part of the title text that should appear italic + olive. Must exactly match a word in the title above." })}
+      ${field({ label: "Lead paragraph", name: "lead", value: featuredData.lead, textarea: true, rows: 3 })}
+      ${formActions("home-featured-status")}
+    </form>
+
+    ${editorHead("Hire Me CTA", "The 'Have a project in mind?' panel below the featured work on home.")}
+    <form class="form" id="hire-cta-form">
+      ${field({ label: "Small label above title", name: "label", value: hireData.label, hint: "Tiny uppercase olive label. Example: 'Let\\'s work together'" })}
+      ${field({ label: "Title", name: "title", value: hireData.title, hint: "The big call to action. Example: 'Have a project in mind?'" })}
+      ${field({ label: "Word(s) to italicize in olive", name: "titleEmphasis", value: hireData.titleEmphasis, hint: "Substring of the title to italicize. Example: 'in mind?'" })}
+      ${field({ label: "Description below title", name: "lead", value: hireData.lead, textarea: true, rows: 3 })}
+      <div class="form__row">
+        ${field({ label: "Button text", name: "buttonText", value: hireData.buttonText })}
+        ${field({ label: "Button link", name: "buttonHref", value: hireData.buttonHref, hint: "Where the button goes. Example: contact.html or mailto:you@example.com" })}
+      </div>
+      ${formActions("hire-cta-status")}
+    </form>
   `;
+
   await renderHeroPhotoCard();
+
   wireSave("hero-form", "hero-status", async (fd) => {
     await saveDoc("hero", {
       badgeEnabled: fd.get("badgeEnabled") === "on",
@@ -480,6 +526,25 @@ async function renderHeroEditor() {
       subtitle: fd.get("subtitle"),
       tagline: fd.get("tagline"),
       photoYear: fd.get("photoYear"),
+    });
+  });
+
+  wireSave("home-featured-form", "home-featured-status", async (fd) => {
+    await saveDoc("homeFeatured", {
+      title: fd.get("title"),
+      titleEmphasis: fd.get("titleEmphasis"),
+      lead: fd.get("lead"),
+    });
+  });
+
+  wireSave("hire-cta-form", "hire-cta-status", async (fd) => {
+    await saveDoc("hireCta", {
+      label: fd.get("label"),
+      title: fd.get("title"),
+      titleEmphasis: fd.get("titleEmphasis"),
+      lead: fd.get("lead"),
+      buttonText: fd.get("buttonText"),
+      buttonHref: fd.get("buttonHref"),
     });
   });
 }

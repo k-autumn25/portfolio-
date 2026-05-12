@@ -112,6 +112,105 @@ function renderWorkIntro(d) {
   setText("work-archive-meta", d.archiveMeta);
 }
 
+// Render the home-page Featured Work section header (title + lead).
+// Wraps the title in mask spans so the existing reveal animation still works.
+function renderHomeFeatured(d) {
+  if (!d) return;
+  const titleEl = $("home-featured-title");
+  if (titleEl && d.title) {
+    const safe = escapeHtml(d.title);
+    let inner;
+    if (d.titleEmphasis) {
+      const em = escapeHtml(d.titleEmphasis);
+      const idx = safe.indexOf(em);
+      if (idx > -1) {
+        const before = safe.slice(0, idx).trim();
+        const emText = `<em>${em}</em>`;
+        const after = safe.slice(idx + em.length).trim();
+        const beforeMask = before
+          ? `<span class="reveal-mask"><span class="reveal-mask__inner">${before}</span></span>`
+          : "";
+        const emMask = `<span class="reveal-mask ${before ? "reveal-mask--delay-1" : ""}"><span class="reveal-mask__inner">${emText}${after}</span></span>`;
+        inner = beforeMask + emMask;
+      } else {
+        inner = `<span class="reveal-mask"><span class="reveal-mask__inner">${safe}</span></span>`;
+      }
+    } else {
+      inner = `<span class="reveal-mask"><span class="reveal-mask__inner">${safe}</span></span>`;
+    }
+    titleEl.innerHTML = inner;
+  }
+  setText("home-featured-lead", d.lead);
+}
+
+// Render the Hire Me CTA panel content.
+function renderHireCta(d) {
+  if (!d) return;
+  setText("hire-label", d.label);
+  const titleEl = $("hire-title");
+  if (titleEl && d.title) {
+    const safe = escapeHtml(d.title);
+    let inner;
+    if (d.titleEmphasis) {
+      const em = escapeHtml(d.titleEmphasis);
+      const idx = safe.indexOf(em);
+      if (idx > -1) {
+        const before = safe.slice(0, idx).trim();
+        const emText = `<em>${em}</em>`;
+        const after = safe.slice(idx + em.length).trim();
+        const beforeMask = before
+          ? `<span class="reveal-mask"><span class="reveal-mask__inner">${before}</span></span>`
+          : "";
+        const emMask = `<span class="reveal-mask ${before ? "reveal-mask--delay-1" : ""}"><span class="reveal-mask__inner">${emText}${after}</span></span>`;
+        inner = beforeMask + emMask;
+      } else {
+        inner = `<span class="reveal-mask"><span class="reveal-mask__inner">${safe}</span></span>`;
+      }
+    } else {
+      inner = `<span class="reveal-mask"><span class="reveal-mask__inner">${safe}</span></span>`;
+    }
+    titleEl.innerHTML = inner;
+  }
+  setText("hire-lead", d.lead);
+  setText("hire-button-text", d.buttonText);
+  const btn = $("hire-button");
+  if (btn && d.buttonHref) btn.href = d.buttonHref;
+}
+
+// Render the first 3 projects as Featured Work cards on the homepage.
+// Only runs if #work-grid exists on the page.
+function renderFeaturedProjects(items) {
+  const grid = $("work-grid");
+  if (!grid || !Array.isArray(items) || !items.length) return;
+  const featured = items.slice(0, 3);
+  // Extract the middle slash-separated segment of `meta` as the category tag.
+  const getCategory = (meta) => {
+    const parts = String(meta || "").split("/").map((s) => s.trim());
+    return parts[1] || "";
+  };
+  grid.innerHTML = featured.map((p) => {
+    const safeId = (p.id || "").replace(/[^a-z0-9-]/gi, "");
+    const cover = (p.images && p.images[0]) || "";
+    const category = getCategory(p.meta);
+    return `
+      <article class="card">
+        <div class="card__media">
+          ${category ? `<span class="card__category">${escapeHtml(category)}</span>` : ""}
+          <img src="${escapeHtml(cover)}" alt="${escapeHtml(p.title || "")} cover" loading="lazy" />
+        </div>
+        <div class="card__body">
+          <span class="card__num">${escapeHtml(p.no || "")}</span>
+          <h3 class="card__title">${escapeHtml(p.title || "")}</h3>
+          <p class="card__desc">${escapeHtml(p.desc || "")}</p>
+          <a href="experience.html#project-${safeId}" class="card__btn">
+            View Case Study <span aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
 function renderProjects(items) {
   const list = $("projects-list");
   if (!list) return;
@@ -319,7 +418,7 @@ async function loadCollection(name) {
 }
 
 async function init() {
-  const [hero, heroPhoto, about, services, workIntro, videos, events, skills, contact, footer, projects, experience, education] = await Promise.all([
+  const [hero, heroPhoto, about, services, workIntro, videos, events, skills, contact, footer, projects, experience, education, homeFeatured, hireCta] = await Promise.all([
     loadDoc("hero"),
     loadDoc("heroPhoto"),
     loadDoc("about"),
@@ -333,6 +432,8 @@ async function init() {
     loadCollection("projects"),
     loadCollection("experience"),
     loadCollection("education"),
+    loadDoc("homeFeatured"),
+    loadDoc("hireCta"),
   ]);
 
   renderHero(hero);
@@ -340,7 +441,10 @@ async function init() {
   renderAbout(about);
   renderServices(services);
   renderWorkIntro(workIntro);
+  renderHomeFeatured(homeFeatured);
+  renderHireCta(hireCta);
   if (projects && projects.length) renderProjects(projects);
+  if (projects && projects.length) renderFeaturedProjects(projects);
   renderVideos(videos);
   renderEvents(events);
   renderExperience(experience);

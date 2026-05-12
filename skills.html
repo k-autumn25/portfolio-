@@ -19,8 +19,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="styles.css" />
+  <script>
+    (function(){ if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); })();
+  </script>
 </head>
 <body data-page="skills">
+  <div class="blobs" aria-hidden="true">
+    <span class="blob blob--1"></span>
+    <span class="blob blob--2"></span>
+    <span class="blob blob--3"></span>
+  </div>
+  <div class="wash" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
   <header class="nav" id="nav">
     <div class="nav__inner">
       <a href="index.html" class="nav__brand" aria-label="Kang Somaliza — home">
@@ -35,6 +46,16 @@
         <a href="contact.html">Contact</a>
       </nav>
 
+      <button class="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
+        <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+        <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+
       <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav">
         <span></span><span></span><span></span>
       </button>
@@ -44,14 +65,8 @@
   <main id="top">
     <section class="section skills" id="skills">
       <div class="section__inner">
-        <header class="section__header">
-          <span class="section__no">01</span>
-          <span class="section__divider"></span>
-          <span class="section__label">Skills &amp; Tools</span>
-        </header>
-
         <h2 class="section__title" id="skills-title">
-          The <em>toolkit</em>.
+          <span class="reveal-mask"><span class="reveal-mask__inner">The <em>toolkit</em>.</span></span>
         </h2>
 
         <div class="skills__grid" id="skills-grid">

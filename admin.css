@@ -678,3 +678,99 @@
   .portal__main { padding: 24px 16px; }
   .form__row { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   Admin nav actions wrapper (theme toggle + user info)
+   ============================================================ */
+.admin__nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ============================================================
+   DARK MODE — admin overrides for hardcoded rgba surfaces
+   Color variables come from styles.css [data-theme="dark"].
+   These overrides handle every white-glass surface that doesn't
+   follow CSS variables so text is readable on dark backgrounds.
+   ============================================================ */
+[data-theme="dark"] .portal__sidebar {
+  background: rgba(255, 255, 255, 0.03);
+  border-right-color: var(--line);
+}
+[data-theme="dark"] .portal__navlink:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+[data-theme="dark"] .portal__subtab:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ALL editor cards and surfaces — dark glass instead of white glass */
+[data-theme="dark"] .cv-card,
+[data-theme="dark"] .setup-card,
+[data-theme="dark"] .item-card,
+[data-theme="dark"] .list-mgr__item,
+[data-theme="dark"] .message,
+[data-theme="dark"] .editor,
+[data-theme="dark"] .form__field,
+[data-theme="dark"] .editor__card,
+[data-theme="dark"] .hero-photo-preview {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: var(--line) !important;
+  color: var(--ink);
+}
+
+/* All inputs / textareas / selects across admin */
+[data-theme="dark"] .admin input[type="text"],
+[data-theme="dark"] .admin input[type="email"],
+[data-theme="dark"] .admin input[type="url"],
+[data-theme="dark"] .admin input[type="tel"],
+[data-theme="dark"] .admin input[type="number"],
+[data-theme="dark"] .admin input[type="date"],
+[data-theme="dark"] .admin textarea,
+[data-theme="dark"] .admin select {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--ink) !important;
+  border-color: var(--line);
+}
+[data-theme="dark"] .admin input:focus,
+[data-theme="dark"] .admin textarea:focus,
+[data-theme="dark"] .admin select:focus {
+  background: rgba(255, 255, 255, 0.09) !important;
+  border-color: var(--olive);
+  outline: none;
+}
+[data-theme="dark"] .admin input::placeholder,
+[data-theme="dark"] .admin textarea::placeholder {
+  color: var(--ink-3);
+}
+
+/* Card text — make sure names/meta are readable on dark glass */
+[data-theme="dark"] .cv-card__name,
+[data-theme="dark"] .cv-card__empty-title { color: var(--ink); }
+[data-theme="dark"] .cv-card__meta,
+[data-theme="dark"] .cv-card__limit,
+[data-theme="dark"] .cv-card__empty-hint { color: var(--ink-2); }
+
+/* Status banners */
+[data-theme="dark"] .admin__status[data-kind="error"] { color: #FF8484; }
+[data-theme="dark"] .form__status[data-kind="error"] { color: #FF8484; }
+[data-theme="dark"] .form__status[data-kind="success"] { color: var(--green); }
+
+/* Buttons sitting on dark cards */
+[data-theme="dark"] .btn--primary {
+  background: var(--olive);
+  color: var(--cream);
+}
+[data-theme="dark"] .btn--primary:hover {
+  background: var(--olive-light);
+}
+[data-theme="dark"] .btn--outline {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+[data-theme="dark"] .btn--outline:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--ink);
+}

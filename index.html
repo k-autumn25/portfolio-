@@ -18,9 +18,24 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=3" />
+  <script>
+    // Set theme before paint to avoid flash
+    (function(){ if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); })();
+  </script>
 </head>
 <body data-page="home">
+  <!-- Floating gradient blobs in background -->
+  <div class="blobs" aria-hidden="true">
+    <span class="blob blob--1"></span>
+    <span class="blob blob--2"></span>
+    <span class="blob blob--3"></span>
+  </div>
+  <div class="wash" aria-hidden="true"></div>
+
+  <!-- Cursor glow (desktop only via CSS) -->
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
   <header class="nav" id="nav">
     <div class="nav__inner">
       <a href="index.html" class="nav__brand" aria-label="Kang Somaliza — home">
@@ -35,6 +50,16 @@
         <a href="contact.html">Contact</a>
       </nav>
 
+      <button class="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
+        <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+        <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+
       <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav">
         <span></span><span></span><span></span>
       </button>
@@ -42,9 +67,9 @@
   </header>
 
   <main id="top">
-    <section class="hero">
+    <section class="hero hero--v2">
       <div class="hero__grid">
-        <div class="hero__text">
+        <div class="hero__text" id="heroText">
           <div class="hero__meta">
             <span id="hero-meta-label">Portfolio</span>
           </div>
@@ -56,21 +81,13 @@
 
           <h1 class="hero__title">
             <span class="hero__title-line" id="hero-title-1">Kang</span>
-            <span class="hero__title-line hero__title-line--accent" id="hero-title-2">Somaliza.</span>
+            <span class="hero__title-line hero__title-line--outline" id="hero-title-2">Somaliza</span>
           </h1>
 
           <p class="hero__subtitle" id="hero-subtitle">Designer · Content Creator · Operations</p>
-
-          <p class="hero__tagline" id="hero-tagline">
-            Phnom Penh–based. I help brands look good and reach the right people through poster, brochure and social media design, plus content planning and video scripting.
-          </p>
-
-          <div class="hero__cta">
-            <a href="assets/cv.pdf" class="btn btn--outline" download data-cv-download>Download Resume <span aria-hidden="true">↓</span></a>
-          </div>
         </div>
 
-        <div class="hero__media">
+        <div class="hero__media" id="heroMedia">
           <span class="hero__section-no" aria-hidden="true">01</span>
 
           <figure class="hero__photo">
@@ -83,9 +100,94 @@
         </div>
       </div>
 
-      <div class="hero__scroll" aria-hidden="true">
-        <span>Scroll</span>
-        <span class="hero__scroll-line"></span>
+    </section>
+
+    <!-- ============================
+         Featured Work
+         ============================ -->
+    <section class="work" id="work">
+      <div class="work__header">
+        <span class="work__no">02</span>
+        <span class="work__divider"></span>
+        <span class="work__label">Featured Work</span>
+      </div>
+
+      <h2 class="work__title" id="home-featured-title">
+        <span class="reveal-mask"><span class="reveal-mask__inner">Selected</span></span>
+        <span class="reveal-mask reveal-mask--delay-1"><span class="reveal-mask__inner"><em>projects.</em></span></span>
+      </h2>
+      <p class="work__lead" id="home-featured-lead">
+        A few campaigns from the last year — social series, brand illustrations, and product launches designed for Unilinks Global Education.
+      </p>
+
+      <div class="work__grid" id="work-grid">
+        <!-- Card 1 -->
+        <article class="card">
+          <div class="card__media">
+            <span class="card__category">Social Series</span>
+            <img src="assets/work/taiwan/taiwan-1.png" alt="Taiwan Study-Abroad Campaign cover" loading="lazy" />
+          </div>
+          <div class="card__body">
+            <span class="card__num">P/01</span>
+            <h3 class="card__title">Taiwan Study-Abroad Campaign</h3>
+            <p class="card__desc">A 6-piece social media series promoting Unilinks' Taiwan partner programs — photo-driven layouts in Khmer and English with university and program highlights.</p>
+            <a href="experience.html#project-taiwan" class="card__btn">
+              View Case Study <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="card">
+          <div class="card__media">
+            <span class="card__category">Illustration</span>
+            <img src="assets/work/mascot/mascot-1.png" alt="Mascot Series cover" loading="lazy" />
+          </div>
+          <div class="card__body">
+            <span class="card__num">P/02</span>
+            <h3 class="card__title">Mascot Series — Study Programs</h3>
+            <p class="card__desc">An 8-piece character illustration series introducing Unilinks' international study programs — playful mascots paired with country and program flags.</p>
+            <a href="experience.html#project-mascot" class="card__btn">
+              View Case Study <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="card">
+          <div class="card__media">
+            <span class="card__category">Product Launch</span>
+            <img src="assets/work/emgs-app/app-1.png" alt="EMGS Mobile App Launch cover" loading="lazy" />
+          </div>
+          <div class="card__body">
+            <span class="card__num">P/03</span>
+            <h3 class="card__title">EMGS Mobile App Launch</h3>
+            <p class="card__desc">A 5-piece rollout for the EMGS Hub mobile app — Student Visa, health updates and university info for Cambodian students bound for Malaysia.</p>
+            <a href="experience.html#project-emgs" class="card__btn">
+              View Case Study <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============================
+         Hire Me CTA
+         ============================ -->
+    <section class="cta" id="hire">
+      <div class="cta__inner">
+        <span class="cta__label" id="hire-label">Let's work together</span>
+        <h2 class="cta__title" id="hire-title">
+          <span class="reveal-mask"><span class="reveal-mask__inner">Have a project</span></span>
+          <span class="reveal-mask reveal-mask--delay-1"><span class="reveal-mask__inner"><em>in mind?</em></span></span>
+        </h2>
+        <p class="cta__lead" id="hire-lead">
+          Open to full-time roles, freelance gigs, and friendly collaborations. If you need someone to bring your brand or campaign to life, let's talk.
+        </p>
+        <a href="contact.html" class="cta__btn" id="hire-button">
+          <span id="hire-button-text">Hire Me</span>
+          <span class="cta__btn-arrow" aria-hidden="true">↗</span>
+        </a>
       </div>
     </section>
   </main>
@@ -101,7 +203,7 @@
     </div>
   </footer>
 
-  <script type="module" src="content.js?v=2"></script>
-  <script src="script.js"></script>
+  <script type="module" src="content.js?v=3"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>

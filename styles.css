@@ -1650,15 +1650,17 @@ body[data-page] .footer {
   padding: calc(var(--nav-h) + 72px) var(--pad-x) 100px;
 }
 
-/* Letter mask reveal — overflow:hidden clips letters that translate up from below */
+/* Letter mask reveal — clip-path masks the bottom only, so italic swashes can bleed horizontally without wrapping */
 .hero--v2 .hero__title {
-  font-size: clamp(72px, 12.5vw, 200px);
+  font-size: clamp(64px, 10.5vw, 176px);
   line-height: 1.02;
   letter-spacing: -0.03em;
 }
 .hero--v2 .hero__title-line {
   display: block;
-  overflow: hidden;
+  white-space: nowrap;
+  overflow: visible;
+  clip-path: inset(-0.5em -100vw 0 -100vw);
   padding-bottom: 0.18em;
   margin-bottom: -0.12em;
 }

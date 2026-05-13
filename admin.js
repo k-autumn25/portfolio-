@@ -998,6 +998,9 @@ async function renderEventsEditor() {
   const images = data.images || [];
   portalMain.innerHTML = `
     ${editorHead("Events", "The 'Behind the Scenes' image strip below the videos.")}
+    <div style="margin-bottom:18px;">
+      <button type="button" class="btn btn--primary" id="add-event-btn">+ Add new event</button>
+    </div>
     <form class="form" id="events-form">
       ${field({ label: "Lead text", name: "lead", value: data.lead, textarea: true, rows: 2 })}
       <div>
@@ -1008,9 +1011,17 @@ async function renderEventsEditor() {
       ${formActions("events-status")}
     </form>
   `;
-  document.getElementById("events-add").addEventListener("click", () => {
-    document.getElementById("events-images").insertAdjacentHTML("beforeend", imgRowHtml(""));
-  });
+  const addEventRow = () => {
+    const list = document.getElementById("events-images");
+    list.insertAdjacentHTML("beforeend", imgRowHtml(""));
+    const lastInput = list.querySelector(".img-urls__row:last-child input[name='image-url']");
+    if (lastInput) {
+      lastInput.focus();
+      lastInput.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+  document.getElementById("events-add").addEventListener("click", addEventRow);
+  document.getElementById("add-event-btn").addEventListener("click", addEventRow);
   document.getElementById("events-images").addEventListener("click", (e) => {
     if (e.target.matches("[data-remove-image]")) e.target.closest(".img-urls__row").remove();
   });

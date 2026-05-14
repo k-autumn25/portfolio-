@@ -791,6 +791,8 @@ async function renderProjectsEditor() {
 }
 
 const RATIO_OPTIONS = ["landscape", "square", "wide", "portrait"];
+const CATEGORY_OPTIONS = ["design", "content", "video", "events"];
+const CATEGORY_LABELS = { design: "Design", content: "Content", video: "Video", events: "Events" };
 const projectCardHtml = (p) => `
   <article class="item-card" data-id="${escapeHtml(p.id)}">
     <header class="item-card__head">
@@ -809,6 +811,15 @@ const projectCardHtml = (p) => `
       ${field({ label: "Title", name: "title", value: p.title })}
       ${field({ label: "Meta line (use ' / ' as separator)", name: "meta", value: p.meta, hint: "Example: Unilinks Global Education / Social Series / 2025" })}
       ${field({ label: "Description", name: "desc", value: p.desc, textarea: true, rows: 3 })}
+      <div class="form__row">
+        <label class="form__field">
+          <span class="form__label">Category (which pill filter)</span>
+          <select name="category">
+            <option value="" ${!p.category ? "selected" : ""}>— Not categorized (shows only under "All") —</option>
+            ${CATEGORY_OPTIONS.map((c) => `<option value="${c}" ${p.category === c ? "selected" : ""}>${CATEGORY_LABELS[c]}</option>`).join("")}
+          </select>
+        </label>
+      </div>
       <div class="form__row">
         <label class="form__field">
           <span class="form__label">Grid columns</span>
@@ -885,6 +896,7 @@ function bindProjectCards() {
           title: $('[name="title"]', form).value.trim(),
           meta: $('[name="meta"]', form).value.trim(),
           desc: $('[name="desc"]', form).value.trim(),
+          category: $('[name="category"]', form).value,
           cols: parseInt($('[name="cols"]', form).value, 10) || 3,
           ratio: $('[name="ratio"]', form).value,
           images,

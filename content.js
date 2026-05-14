@@ -225,13 +225,14 @@ function renderProjects(items) {
     const cols = p.cols === 4 ? "project__grid--4" : "project__grid--3";
     const ratioClass = p.ratio ? `project__grid--${escapeHtml(p.ratio)}` : "";
     const safeId = (p.id || "").replace(/[^a-z0-9-]/gi, "");
+    const category = (p.category || "").toLowerCase().trim();
     const images = (p.images || []).map((src, i) => `
       <a class="project__img" href="${escapeHtml(src)}" target="_blank" rel="noopener">
         <img src="${escapeHtml(src)}" alt="${escapeHtml(p.title || "")} image ${i + 1}" loading="lazy" />
       </a>
     `).join("");
     return `
-      <article class="project" id="project-${safeId}">
+      <article class="project" id="project-${safeId}" data-category="${escapeHtml(category)}">
         <header class="project__header">
           <span class="project__no">${escapeHtml(p.no || "")}</span>
           <div class="project__heading">
@@ -244,6 +245,28 @@ function renderProjects(items) {
       </article>
     `;
   }).join("");
+  wireProjectFilters();
+}
+
+function wireProjectFilters() {
+  const bar = document.getElementById("project-filters");
+  if (!bar || bar.dataset.wired === "true") return;
+  bar.dataset.wired = "true";
+  bar.addEventListener("click", (e) => {
+    const btn = e.target.closest(".project-filter");
+    if (!btn) return;
+    const filter = (btn.dataset.filter || "all").toLowerCase();
+    bar.querySelectorAll(".project-filter").forEach((b) => {
+      const active = b === btn;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    document.querySelectorAll("#projects-list .project").forEach((proj) => {
+      const cat = (proj.dataset.category || "").toLowerCase();
+      const show = filter === "all" || cat === filter;
+      proj.classList.toggle("is-filtered-out", !show);
+    });
+  });
 }
 
 function renderVideos(d) {

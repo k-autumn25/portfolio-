@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="styles.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=6" />
   <script>
     (function(){ if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); })();
   </script>
@@ -120,6 +120,14 @@
             <span class="reveal-mask"><span class="reveal-mask__inner">Five campaigns. One year.</span></span>
             <span class="reveal-mask reveal-mask--delay-1"><span class="reveal-mask__inner"><em>Twenty-five pieces.</em></span></span>
           </h2>
+
+          <div class="project-filters" id="project-filters" role="tablist" aria-label="Filter projects by category">
+            <button type="button" class="project-filter is-active" data-filter="all" role="tab" aria-selected="true">All</button>
+            <button type="button" class="project-filter" data-filter="design" role="tab" aria-selected="false">Design</button>
+            <button type="button" class="project-filter" data-filter="content" role="tab" aria-selected="false">Content</button>
+            <button type="button" class="project-filter" data-filter="video" role="tab" aria-selected="false">Video</button>
+            <button type="button" class="project-filter" data-filter="events" role="tab" aria-selected="false">Events</button>
+          </div>
 
           <div class="projects" id="projects-list">
 
@@ -325,7 +333,7 @@
     </div>
   </footer>
 
-  <script type="module" src="content.js?v=4"></script>
+  <script type="module" src="content.js?v=5"></script>
   <script src="script.js"></script>
 </body>
 </html>

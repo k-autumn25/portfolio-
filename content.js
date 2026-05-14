@@ -225,14 +225,13 @@ function renderProjects(items) {
     const cols = p.cols === 4 ? "project__grid--4" : "project__grid--3";
     const ratioClass = p.ratio ? `project__grid--${escapeHtml(p.ratio)}` : "";
     const safeId = (p.id || "").replace(/[^a-z0-9-]/gi, "");
-    const category = (p.category || "").toLowerCase().trim();
     const images = (p.images || []).map((src, i) => `
       <a class="project__img" href="${escapeHtml(src)}" target="_blank" rel="noopener">
         <img src="${escapeHtml(src)}" alt="${escapeHtml(p.title || "")} image ${i + 1}" loading="lazy" />
       </a>
     `).join("");
     return `
-      <article class="project" id="project-${safeId}" data-category="${escapeHtml(category)}">
+      <article class="project" id="project-${safeId}">
         <header class="project__header">
           <span class="project__no">${escapeHtml(p.no || "")}</span>
           <div class="project__heading">
@@ -245,27 +244,24 @@ function renderProjects(items) {
       </article>
     `;
   }).join("");
-  wireProjectFilters();
 }
 
-function applyProjectFilter(filter) {
-  const target = (filter || "").toLowerCase();
-  document.querySelectorAll("#projects-list .project").forEach((proj) => {
-    const cat = (proj.dataset.category || "").toLowerCase();
-    const show = target === "all" || cat === target;
-    proj.classList.toggle("is-filtered-out", !show);
-  });
-}
-
-function wireProjectFilters() {
+// Pill bar above Featured Work — switches between Design / Content / Video / Events panes
+function wireWorkPanes() {
   const bar = document.getElementById("project-filters");
-  if (!bar) return;
-  // Apply whichever pill is currently active so initial render is filtered
-  const activeBtn = bar.querySelector(".project-filter.is-active") || bar.querySelector(".project-filter");
-  if (activeBtn) applyProjectFilter(activeBtn.dataset.filter);
-
-  if (bar.dataset.wired === "true") return;
+  if (!bar || bar.dataset.wired === "true") return;
   bar.dataset.wired = "true";
+
+  const showPane = (name) => {
+    document.querySelectorAll(".work-pane").forEach((pane) => {
+      pane.hidden = pane.dataset.pill !== name;
+    });
+  };
+
+  // Apply whichever pill is active on initial load
+  const activeBtn = bar.querySelector(".project-filter.is-active") || bar.querySelector(".project-filter");
+  if (activeBtn) showPane(activeBtn.dataset.filter);
+
   bar.addEventListener("click", (e) => {
     const btn = e.target.closest(".project-filter");
     if (!btn) return;
@@ -274,7 +270,7 @@ function wireProjectFilters() {
       b.classList.toggle("is-active", active);
       b.setAttribute("aria-selected", active ? "true" : "false");
     });
-    applyProjectFilter(btn.dataset.filter);
+    showPane(btn.dataset.filter);
   });
 }
 
@@ -530,6 +526,7 @@ async function init() {
   if (projects && projects.length) renderFeaturedProjects(projects);
   renderVideos(videos);
   renderEvents(events, eventItems);
+  wireWorkPanes();
   renderExperience(experience);
   renderEducation(education);
   renderSkills(skills);

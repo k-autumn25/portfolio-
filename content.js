@@ -248,24 +248,33 @@ function renderProjects(items) {
   wireProjectFilters();
 }
 
+function applyProjectFilter(filter) {
+  const target = (filter || "").toLowerCase();
+  document.querySelectorAll("#projects-list .project").forEach((proj) => {
+    const cat = (proj.dataset.category || "").toLowerCase();
+    const show = target === "all" || cat === target;
+    proj.classList.toggle("is-filtered-out", !show);
+  });
+}
+
 function wireProjectFilters() {
   const bar = document.getElementById("project-filters");
-  if (!bar || bar.dataset.wired === "true") return;
+  if (!bar) return;
+  // Apply whichever pill is currently active so initial render is filtered
+  const activeBtn = bar.querySelector(".project-filter.is-active") || bar.querySelector(".project-filter");
+  if (activeBtn) applyProjectFilter(activeBtn.dataset.filter);
+
+  if (bar.dataset.wired === "true") return;
   bar.dataset.wired = "true";
   bar.addEventListener("click", (e) => {
     const btn = e.target.closest(".project-filter");
     if (!btn) return;
-    const filter = (btn.dataset.filter || "all").toLowerCase();
     bar.querySelectorAll(".project-filter").forEach((b) => {
       const active = b === btn;
       b.classList.toggle("is-active", active);
       b.setAttribute("aria-selected", active ? "true" : "false");
     });
-    document.querySelectorAll("#projects-list .project").forEach((proj) => {
-      const cat = (proj.dataset.category || "").toLowerCase();
-      const show = filter === "all" || cat === filter;
-      proj.classList.toggle("is-filtered-out", !show);
-    });
+    applyProjectFilter(btn.dataset.filter);
   });
 }
 

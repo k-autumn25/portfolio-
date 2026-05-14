@@ -992,49 +992,276 @@ const videoItemHtml = (v) => `
     ${field({ label: "URL", name: "item-url", value: v.url, type: "url" })}
   </div>`;
 
-// ---------- Events ----------
+// ---------- Events (CRUD with rich fields + image upload) ----------
+const MAX_EVENT_IMAGE_BYTES = 350 * 1024;          // per uploaded image
+const MAX_EVENT_DOC_BASE64_BYTES = 800 * 1024;     // per event doc (stay under Firestore 1 MB)
+const EVENT_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 async function renderEventsEditor() {
-  const data = (await loadDoc("events")) || SEED.events;
-  const images = data.images || [];
+  const leadDoc = (await loadDoc("events")) || SEED.events;
+  let events = await loadCollection("events");
+
+  // First-time auto-migration: if no event docs exist yet but the old image
+  // strip has paths, turn each one into its own event doc so nothing visually
+  // disappears for the user.
+  if (events.length === 0 && Array.isArray(leadDoc?.images) && leadDoc.images.length > 0) {
+    try {
+      const batch = writeBatch(db);
+      leadDoc.images.filter(Boolean).forEach((src, i) => {
+        const id = `event-${i + 1}`;
+        batch.set(doc(db, "events", id), {
+          title: "",
+          date: "",
+          location: "",
+          desc: "",
+          images: [{ kind: "url", src }],
+          order: i + 1,
+        });
+      });
+      await batch.commit();
+      events = await loadCollection("events");
+    } catch (err) {
+      console.warn("Event auto-migration failed:", err.message);
+    }
+  }
+
   portalMain.innerHTML = `
-    ${editorHead("Events", "The 'Behind the Scenes' image strip below the videos.")}
-    <div style="margin-bottom:18px;">
-      <button type="button" class="btn btn--primary" id="add-event-btn">+ Add new event</button>
-    </div>
-    <form class="form" id="events-form">
-      ${field({ label: "Lead text", name: "lead", value: data.lead, textarea: true, rows: 2 })}
-      <div>
-        <span class="form__label" style="margin-bottom:8px; display:block;">Event images</span>
-        <div class="img-urls" id="events-images">${images.map(imgRowHtml).join("")}</div>
-        <button type="button" class="list-mgr__add" id="events-add" style="margin-top:8px;">+ Add image</button>
-      </div>
-      ${formActions("events-status")}
+    ${editorHead("Events", "Each event has its own card with title, date, location, description, and pictures.")}
+    <form class="form" id="events-lead-form" style="margin-bottom:24px;">
+      ${field({ label: "Section lead (one-line intro shown above all events)", name: "lead", value: leadDoc?.lead || "", textarea: true, rows: 2 })}
+      ${formActions("events-lead-status")}
     </form>
+    <div style="margin-bottom:18px;">
+      <button class="btn btn--primary" id="add-event-btn">+ Add new event</button>
+    </div>
+    <div id="events-list-mgr">
+      ${events.length === 0 ? '<div class="empty">No events yet — click "Add new event" to add your first one.</div>' : ""}
+      ${events.map((ev) => eventCardHtml(ev)).join("")}
+    </div>
   `;
-  const addEventRow = () => {
-    const list = document.getElementById("events-images");
-    list.insertAdjacentHTML("beforeend", imgRowHtml(""));
-    const lastInput = list.querySelector(".img-urls__row:last-child input[name='image-url']");
-    if (lastInput) {
-      lastInput.focus();
-      lastInput.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  };
-  document.getElementById("events-add").addEventListener("click", addEventRow);
-  document.getElementById("add-event-btn").addEventListener("click", addEventRow);
-  document.getElementById("events-images").addEventListener("click", (e) => {
-    if (e.target.matches("[data-remove-image]")) e.target.closest(".img-urls__row").remove();
+  wireSave("events-lead-form", "events-lead-status", async (fd) => {
+    await saveDoc("events", { lead: fd.get("lead") || "" });
   });
-  document.getElementById("events-images").addEventListener("input", (e) => {
-    if (e.target.matches('input[name="image-url"]')) {
-      const img = e.target.previousElementSibling;
-      if (img) img.src = e.target.value;
-    }
+  document.getElementById("add-event-btn").addEventListener("click", () => addEvent());
+  bindEventCards();
+}
+
+const eventCardHtml = (ev) => {
+  const title = ev.title || "(untitled event)";
+  const imgs = (ev.images || []).map((img) => eventImageRowHtml(img)).join("");
+  return `
+    <article class="item-card" data-event-id="${escapeHtml(ev.id)}">
+      <header class="item-card__head">
+        <h3 class="item-card__title">${escapeHtml(title)}</h3>
+        <div class="item-card__actions">
+          <button type="button" class="icon-btn" data-event-action="up">↑</button>
+          <button type="button" class="icon-btn" data-event-action="down">↓</button>
+          <button type="button" class="icon-btn icon-btn--danger" data-event-action="delete">Delete</button>
+        </div>
+      </header>
+      <form class="form" data-event-form>
+        ${field({ label: "Title", name: "title", value: ev.title, placeholder: "e.g. Unilinks Open Day 2025" })}
+        <div class="form__row">
+          ${field({ label: "Date", name: "date", value: ev.date, placeholder: "e.g. March 2025" })}
+          ${field({ label: "Location", name: "location", value: ev.location, placeholder: "e.g. Phnom Penh" })}
+        </div>
+        ${field({ label: "Description", name: "desc", value: ev.desc, textarea: true, rows: 3, hint: "1–2 lines about what happened at this event." })}
+        ${field({ label: "Order (lower number shows first)", name: "order", type: "number", value: ev.order ?? 1 })}
+        <div>
+          <span class="form__label" style="margin-bottom:8px; display:block;">Pictures</span>
+          <div class="img-urls" data-event-images>${imgs}</div>
+          <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+            <input type="file" accept="image/jpeg,image/png,image/webp" data-event-upload-input hidden />
+            <button type="button" class="btn btn--outline" data-event-upload-trigger>📁 Upload from computer</button>
+            <button type="button" class="list-mgr__add" data-event-add-url>+ Add URL / path</button>
+          </div>
+          <p class="form__hint" style="margin-top:8px;">
+            <strong>Upload:</strong> JPEG / PNG / WebP, max 350 KB per picture, ~2 uploads per event (Firestore limit). Compress big photos at tinypng.com first.
+            <strong>URL / path:</strong> no size limit — paste like <code>assets/events/photo.jpg</code> or <code>https://…</code>.
+          </p>
+        </div>
+        <div class="form__actions">
+          <button type="submit" class="btn btn--primary">Save event</button>
+          <span class="form__status" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+    </article>
+  `;
+};
+
+const eventImageRowHtml = (img) => {
+  const isUpload = img && img.kind === "upload" && img.data;
+  if (isUpload) {
+    const preview = `data:${img.type || "image/jpeg"};base64,${img.data}`;
+    return `
+      <div class="img-urls__row" data-event-img-row data-kind="upload"
+           data-upload-data="${img.data}"
+           data-upload-type="${escapeHtml(img.type || "image/jpeg")}"
+           data-upload-name="${escapeHtml(img.fileName || "image")}"
+           data-upload-size="${img.size || 0}">
+        <img class="img-urls__preview" src="${preview}" alt="" />
+        <div class="event-img__meta">Uploaded: ${escapeHtml(img.fileName || "image")} · ${formatBytes(img.size || 0)}</div>
+        <button type="button" class="icon-btn icon-btn--danger" data-remove-event-img>×</button>
+      </div>
+    `;
+  }
+  const src = (img && (typeof img === "string" ? img : img.src)) || "";
+  return `
+    <div class="img-urls__row" data-event-img-row data-kind="url">
+      <img class="img-urls__preview" src="${escapeHtml(src)}" alt="" onerror="this.style.opacity=0.3" />
+      <input type="text" name="event-image-url" value="${escapeHtml(src)}" placeholder="assets/events/photo.jpg or https://..." />
+      <button type="button" class="icon-btn icon-btn--danger" data-remove-event-img>×</button>
+    </div>
+  `;
+};
+
+function bindEventCards() {
+  $$("[data-event-id]", portalMain).forEach((card) => {
+    const id = card.dataset.eventId;
+    const form = $("[data-event-form]", card);
+    const imgList = $("[data-event-images]", card);
+    if (!form || !imgList) return;
+
+    // URL row: live preview as user types
+    imgList.addEventListener("input", (e) => {
+      if (e.target.matches('input[name="event-image-url"]')) {
+        const preview = e.target.parentElement.querySelector(".img-urls__preview");
+        if (preview) preview.src = e.target.value;
+      }
+    });
+
+    // Remove image row
+    imgList.addEventListener("click", (e) => {
+      if (e.target.matches("[data-remove-event-img]")) {
+        e.target.closest("[data-event-img-row]").remove();
+      }
+    });
+
+    // Add URL row
+    $("[data-event-add-url]", card).addEventListener("click", () => {
+      imgList.insertAdjacentHTML("beforeend", eventImageRowHtml({ kind: "url", src: "" }));
+      const last = imgList.querySelector("[data-event-img-row]:last-child input");
+      if (last) { last.focus(); last.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    });
+
+    // Upload from computer
+    const uploadInput = $("[data-event-upload-input]", card);
+    const uploadTrigger = $("[data-event-upload-trigger]", card);
+    const status = form.querySelector(".form__status");
+    uploadTrigger.addEventListener("click", () => uploadInput.click());
+    uploadInput.addEventListener("change", async () => {
+      const file = uploadInput.files?.[0];
+      if (!file) return;
+      const isImage = EVENT_IMAGE_TYPES.includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
+      if (!isImage) {
+        setStatus(status, "Please choose a JPEG, PNG, or WebP image.", "error");
+        uploadInput.value = "";
+        return;
+      }
+      if (file.size > MAX_EVENT_IMAGE_BYTES) {
+        setStatus(status, `That file is ${formatBytes(file.size)} — too big. Max is 350 KB. Compress at tinypng.com first.`, "error");
+        uploadInput.value = "";
+        return;
+      }
+      try {
+        const data = await fileToBase64(file);
+        imgList.insertAdjacentHTML("beforeend", eventImageRowHtml({
+          kind: "upload", data, type: file.type, fileName: file.name, size: file.size,
+        }));
+        setStatus(status, "Picture added. Click 'Save event' to keep it.", "success");
+        uploadInput.value = "";
+      } catch (err) {
+        setStatus(status, err.message || "Could not read the file.", "error");
+        uploadInput.value = "";
+      }
+    });
+
+    // Save form
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      setStatus(status, "Saving…", "pending");
+      try {
+        const fd = new FormData(form);
+        const rows = $$("[data-event-img-row]", imgList);
+        const images = rows.map((row) => {
+          if (row.dataset.kind === "upload" && row.dataset.uploadData) {
+            return {
+              kind: "upload",
+              data: row.dataset.uploadData,
+              type: row.dataset.uploadType || "image/jpeg",
+              fileName: row.dataset.uploadName || "image",
+              size: Number(row.dataset.uploadSize || 0),
+            };
+          }
+          const input = $("input[name='event-image-url']", row);
+          const src = input?.value.trim();
+          return src ? { kind: "url", src } : null;
+        }).filter(Boolean);
+
+        // Stay under Firestore's per-doc size cap
+        const totalBase64 = images.reduce((sum, img) =>
+          img.kind === "upload" ? sum + (img.data?.length || 0) : sum, 0);
+        if (totalBase64 > MAX_EVENT_DOC_BASE64_BYTES) {
+          throw new Error(`Total uploaded pictures are ~${formatBytes(totalBase64)} — over the ~${formatBytes(MAX_EVENT_DOC_BASE64_BYTES)} per-event limit. Remove an upload or compress further.`);
+        }
+
+        await setDoc(doc(db, "events", id), {
+          title: fd.get("title") || "",
+          date: fd.get("date") || "",
+          location: fd.get("location") || "",
+          desc: fd.get("desc") || "",
+          order: Number(fd.get("order")) || 1,
+          images,
+        });
+        setStatus(status, "Saved.", "success");
+        setTimeout(renderEventsEditor, 600);
+      } catch (err) {
+        console.error(err);
+        setStatus(status, err.message || "Save failed.", "error");
+      } finally {
+        submit.disabled = false;
+      }
+    });
+
+    // Up / Down / Delete
+    $$("[data-event-action]", card.querySelector(".item-card__head")).forEach((btn) => {
+      btn.addEventListener("click", () => handleEventAction(id, btn.dataset.eventAction));
+    });
   });
-  wireSave("events-form", "events-status", async (fd) => {
-    const images = $$('#events-images input[name="image-url"]').map((i) => i.value.trim()).filter(Boolean);
-    await saveDoc("events", { lead: fd.get("lead"), images });
-  });
+}
+
+async function handleEventAction(id, action) {
+  if (action === "delete") {
+    if (!confirm("Delete this event?")) return;
+    try { await deleteDoc(doc(db, "events", id)); renderEventsEditor(); }
+    catch (err) { alert("Delete failed: " + err.message); }
+    return;
+  }
+  if (action === "up" || action === "down") {
+    try { await reorderItem("events", id, action); renderEventsEditor(); }
+    catch (err) { alert("Reorder failed: " + err.message); }
+  }
+}
+
+async function addEvent() {
+  const items = await loadCollection("events");
+  const maxOrder = items.reduce((m, p) => Math.max(m, p.order || 0), 0);
+  const id = `event-${Date.now().toString(36)}`;
+  try {
+    await setDoc(doc(db, "events", id), {
+      title: "New event",
+      date: "",
+      location: "",
+      desc: "",
+      images: [],
+      order: maxOrder + 1,
+    });
+    renderEventsEditor();
+  } catch (err) {
+    alert("Add failed: " + err.message);
+  }
 }
 
 // ---------- Experience (CRUD) ----------

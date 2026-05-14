@@ -441,6 +441,18 @@
   object-fit: cover;
   flex-shrink: 0;
 }
+.event-img__meta {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  font-style: italic;
+  padding: 6px 8px;
+  background: var(--cream-2);
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ============================
    Inbox (existing)

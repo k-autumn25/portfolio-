@@ -263,14 +263,61 @@ function renderVideos(d) {
   `).join("");
 }
 
-function renderEvents(d) {
-  if (!d) return;
-  setText("events-lead", d.lead);
+function renderEvents(d, items) {
+  if (d) setText("events-lead", d.lead);
   const strip = $("events-strip");
-  if (!strip || !Array.isArray(d.images)) return;
-  strip.innerHTML = d.images.map((src, i) => `
-    <div class="events__img"><img src="${escapeHtml(src)}" alt="Event photo ${i + 1}" loading="lazy" /></div>
-  `).join("");
+  if (!strip) return;
+
+  const resolveImgSrc = (img) => {
+    if (!img) return "";
+    if (typeof img === "string") return img;
+    if (img.kind === "upload" && img.data) {
+      const type = img.type || "image/jpeg";
+      return `data:${type};base64,${img.data}`;
+    }
+    return img.src || "";
+  };
+
+  if (Array.isArray(items) && items.length > 0) {
+    strip.classList.remove("events__strip");
+    strip.classList.add("events__cards");
+    strip.innerHTML = items.map((ev) => {
+      const imgList = (ev.images || []).map((img, i) => {
+        const src = resolveImgSrc(img);
+        if (!src) return "";
+        return `
+          <a class="event-card__img" href="${escapeHtml(src)}" target="_blank" rel="noopener">
+            <img src="${escapeHtml(src)}" alt="${escapeHtml(ev.title || "Event")} photo ${i + 1}" loading="lazy" />
+          </a>
+        `;
+      }).filter(Boolean).join("");
+      const count = (ev.images || []).filter((img) => resolveImgSrc(img)).length;
+      const metaBits = [ev.date, ev.location].filter(Boolean).map(escapeHtml)
+        .join(' <span class="event-card__sep">·</span> ');
+      return `
+        <article class="event-card">
+          <header class="event-card__header">
+            ${ev.title ? `<h3 class="event-card__title">${escapeHtml(ev.title)}</h3>` : ""}
+            ${metaBits ? `<p class="event-card__meta">${metaBits}</p>` : ""}
+          </header>
+          ${ev.desc ? `<p class="event-card__desc">${escapeHtml(ev.desc)}</p>` : ""}
+          ${imgList ? `<div class="event-card__gallery" data-count="${count}">${imgList}</div>` : ""}
+        </article>
+      `;
+    }).join("");
+    return;
+  }
+
+  // Fallback: old single-strip behaviour (used only if collection is empty)
+  if (d && Array.isArray(d.images) && d.images.length) {
+    strip.classList.add("events__strip");
+    strip.classList.remove("events__cards");
+    strip.innerHTML = d.images.map((src, i) => `
+      <div class="events__img"><img src="${escapeHtml(src)}" alt="Event photo ${i + 1}" loading="lazy" /></div>
+    `).join("");
+  } else {
+    strip.innerHTML = "";
+  }
 }
 
 function renderExperience(items) {
@@ -421,7 +468,7 @@ async function loadCollection(name) {
 }
 
 async function init() {
-  const [hero, heroPhoto, about, services, workIntro, videos, events, skills, contact, footer, projects, experience, education, homeFeatured, hireCta] = await Promise.all([
+  const [hero, heroPhoto, about, services, workIntro, videos, events, eventItems, skills, contact, footer, projects, experience, education, homeFeatured, hireCta] = await Promise.all([
     loadDoc("hero"),
     loadDoc("heroPhoto"),
     loadDoc("about"),
@@ -429,6 +476,7 @@ async function init() {
     loadDoc("workIntro"),
     loadDoc("videos"),
     loadDoc("events"),
+    loadCollection("events"),
     loadDoc("skills"),
     loadDoc("contact"),
     loadDoc("footer"),
@@ -449,7 +497,7 @@ async function init() {
   if (projects && projects.length) renderProjects(projects);
   if (projects && projects.length) renderFeaturedProjects(projects);
   renderVideos(videos);
-  renderEvents(events);
+  renderEvents(events, eventItems);
   renderExperience(experience);
   renderEducation(education);
   renderSkills(skills);

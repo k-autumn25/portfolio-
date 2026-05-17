@@ -234,12 +234,15 @@ button { font: inherit; }
     transform: translateX(0);
   }
   .nav__links a {
-    padding: 14px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    font-family: var(--serif);
-    font-weight: 500;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 19px;
+    letter-spacing: 0.01em;
     width: 100%;
-    color: #F2EDE2;
+    color: #FFFFFF;
+    -webkit-font-smoothing: antialiased;
   }
   .nav__links a::after { display: none; }
   .nav__links a:last-child { border-bottom: 0; }
@@ -2447,8 +2450,8 @@ body, .nav, .card, .cta__inner, .pill, .hero__badge,
   box-shadow: -16px 0 40px rgba(0, 0, 0, 0.55);
 }
 [data-theme="dark"] .nav__links a {
-  color: #F5F1E8;
-  border-bottom-color: rgba(245, 241, 232, 0.12);
+  color: #FFFFFF;
+  border-bottom-color: rgba(255, 255, 255, 0.14);
 }
 
 /* Hero badge / pill surfaces */

@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <script>
     (function(){ if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); })();
   </script>
@@ -271,12 +271,24 @@
           </div><!-- /pane-design -->
 
           <div class="work-pane" id="pane-content" data-pill="content" role="tabpanel" hidden>
-            <div class="work-pane__placeholder">
-              <p class="work-pane__placeholder-eyebrow">Content</p>
-              <h3 class="work-pane__placeholder-title">Coming soon.</h3>
-              <p class="work-pane__placeholder-lead">Writing, captions, and content planning samples will live here.</p>
+          <div class="work__sub" id="content">
+            <header class="work__sub-header">
+              <span class="section__no">01.3.3</span>
+              <span class="section__divider"></span>
+              <span class="section__label">Writing &amp; Content</span>
+            </header>
+
+            <p class="work__sub-lead" id="content-lead">Writing, captions, and content planning samples.</p>
+
+            <div class="content__strip" id="content-strip">
+              <div class="work-pane__placeholder">
+                <p class="work-pane__placeholder-eyebrow">Content</p>
+                <h3 class="work-pane__placeholder-title">Coming soon.</h3>
+                <p class="work-pane__placeholder-lead">Writing, captions, and content planning samples will live here.</p>
+              </div>
             </div>
           </div>
+          </div><!-- /pane-content -->
 
           <div class="work-pane" id="pane-video" data-pill="video" role="tabpanel" hidden>
           <div class="work__sub" id="video">
@@ -348,7 +360,7 @@
     </div>
   </footer>
 
-  <script type="module" src="content.js?v=7"></script>
+  <script type="module" src="content.js?v=9"></script>
   <script src="script.js"></script>
 </body>
 </html>

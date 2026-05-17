@@ -42,6 +42,22 @@ navLinks.forEach((link) => {
   });
 });
 
+const closeNav = () => {
+  if (!nav.classList.contains('is-open')) return;
+  nav.classList.remove('is-open');
+  navToggle.setAttribute('aria-expanded', 'false');
+};
+
+document.addEventListener('click', (e) => {
+  if (!nav.classList.contains('is-open')) return;
+  if (e.target.closest('.nav__links') || e.target.closest('.nav__toggle')) return;
+  closeNav();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeNav();
+});
+
 // Highlight current page in nav
 const currentPage = document.body.dataset.page;
 if (currentPage) {

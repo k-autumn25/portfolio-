@@ -180,38 +180,95 @@ function renderHireCta(d) {
   if (btn && d.buttonHref) btn.href = d.buttonHref;
 }
 
-// Render the first 3 projects as Featured Work cards on the homepage.
-// Only runs if #work-grid exists on the page.
-function renderFeaturedProjects(items) {
+// Resolve an image to a usable src — handles plain URLs, {kind:"url"} and base64 uploads.
+const resolveImgSrc = (img) => {
+  if (!img) return "";
+  if (typeof img === "string") return img;
+  if (img.kind === "upload" && img.data) {
+    return `data:${img.type || "image/jpeg"};base64,${img.data}`;
+  }
+  return img.src || "";
+};
+
+// Render Featured Work on the homepage: top 1 from projects (artwork) +
+// top 1 from events + top 1 from content. Only runs if #work-grid exists.
+function renderFeaturedProjects(projects, events, contentItems) {
   const grid = $("work-grid");
-  if (!grid || !Array.isArray(items) || !items.length) return;
-  const featured = items.slice(0, 3);
-  // Extract the middle slash-separated segment of `meta` as the category tag.
-  const getCategory = (meta) => {
+  if (!grid) return;
+
+  const getProjectCategory = (meta) => {
     const parts = String(meta || "").split("/").map((s) => s.trim());
     return parts[1] || "";
   };
-  grid.innerHTML = featured.map((p) => {
-    const safeId = (p.id || "").replace(/[^a-z0-9-]/gi, "");
-    const cover = (p.images && p.images[0]) || "";
-    const category = getCategory(p.meta);
-    return `
-      <article class="card">
-        <div class="card__media">
-          ${category ? `<span class="card__category">${escapeHtml(category)}</span>` : ""}
-          <img src="${escapeHtml(cover)}" alt="${escapeHtml(p.title || "")} cover" loading="lazy" />
-        </div>
-        <div class="card__body">
-          <span class="card__num">${escapeHtml(p.no || "")}</span>
-          <h3 class="card__title">${escapeHtml(p.title || "")}</h3>
-          <p class="card__desc">${escapeHtml(p.desc || "")}</p>
-          <a href="experience.html#project-${safeId}" class="card__btn">
-            View Case Study <span aria-hidden="true">&rarr;</span>
-          </a>
-        </div>
-      </article>
-    `;
-  }).join("");
+
+  const projectQueue = [...(projects || [])];
+  const takeProject = () => {
+    const proj = projectQueue.shift();
+    if (!proj) return null;
+    const safeId = (proj.id || "").replace(/[^a-z0-9-]/gi, "");
+    return {
+      cover: (proj.images && proj.images[0]) || "",
+      category: getProjectCategory(proj.meta),
+      title: proj.title || "",
+      desc: proj.desc || "",
+      href: `experience.html#project-${safeId}`,
+    };
+  };
+
+  const cards = [];
+
+  // Slot 1 — top artwork
+  const artwork = takeProject();
+  if (artwork) cards.push(artwork);
+
+  // Slot 2 — top event (fall back to next artwork if no events exist)
+  const ev = (events || [])[0];
+  if (ev) {
+    cards.push({
+      cover: resolveImgSrc((ev.images || [])[0]),
+      category: "Event",
+      title: ev.title || "",
+      desc: ev.desc || "",
+      href: `experience.html#events`,
+    });
+  } else {
+    const filler = takeProject();
+    if (filler) cards.push(filler);
+  }
+
+  // Slot 3 — top content piece (fall back to next artwork if no content exists)
+  const co = (contentItems || [])[0];
+  if (co) {
+    cards.push({
+      cover: resolveImgSrc((co.images || [])[0]),
+      category: co.category || "Content",
+      title: co.title || "",
+      desc: co.desc || "",
+      href: `experience.html#content`,
+    });
+  } else {
+    const filler = takeProject();
+    if (filler) cards.push(filler);
+  }
+
+  if (!cards.length) return;
+
+  grid.innerHTML = cards.map((c, i) => `
+    <article class="card">
+      <div class="card__media">
+        ${c.category ? `<span class="card__category">${escapeHtml(c.category)}</span>` : ""}
+        <img src="${escapeHtml(c.cover)}" alt="${escapeHtml(c.title)} cover" loading="lazy" />
+      </div>
+      <div class="card__body">
+        <span class="card__num">P/${String(i + 1).padStart(2, "0")}</span>
+        <h3 class="card__title">${escapeHtml(c.title)}</h3>
+        <p class="card__desc">${escapeHtml(c.desc)}</p>
+        <a href="${escapeHtml(c.href)}" class="card__btn">
+          View Case Study <span aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+    </article>
+  `).join("");
 }
 
 function renderProjects(items) {
@@ -258,9 +315,26 @@ function wireWorkPanes() {
     });
   };
 
-  // Apply whichever pill is active on initial load
-  const activeBtn = bar.querySelector(".project-filter.is-active") || bar.querySelector(".project-filter");
-  if (activeBtn) showPane(activeBtn.dataset.filter);
+  const setActive = (filter) => {
+    let matched = false;
+    bar.querySelectorAll(".project-filter").forEach((b) => {
+      const active = b.dataset.filter === filter;
+      if (active) matched = true;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    if (matched) showPane(filter);
+    return matched;
+  };
+
+  // If we arrived with a hash that names a pane (#content, #video, #events),
+  // jump to that pill. Otherwise use whichever was already marked active.
+  const hash = (location.hash || "").replace(/^#/, "").toLowerCase();
+  const hashToFilter = { content: "content", video: "video", events: "events", design: "design" };
+  if (!setActive(hashToFilter[hash] || "")) {
+    const activeBtn = bar.querySelector(".project-filter.is-active") || bar.querySelector(".project-filter");
+    if (activeBtn) showPane(activeBtn.dataset.filter);
+  }
 
   bar.addEventListener("click", (e) => {
     const btn = e.target.closest(".project-filter");
@@ -289,6 +363,39 @@ function renderVideos(d) {
       </div>
     </a>
   `).join("");
+}
+
+// Render the Content pane on the Experience page (#content-strip). Replaces
+// the static "Coming soon" placeholder once any content cards exist.
+function renderContent(leadDoc, items) {
+  if (leadDoc) setText("content-lead", leadDoc.lead);
+  const strip = $("content-strip");
+  if (!strip) return;
+  if (!Array.isArray(items) || items.length === 0) return; // keep placeholder
+
+  strip.classList.add("content__cards");
+  strip.innerHTML = items.map((c) => {
+    const imgList = (c.images || []).map((img, i) => {
+      const src = resolveImgSrc(img);
+      if (!src) return "";
+      return `
+        <a class="event-card__img" href="${escapeHtml(src)}" target="_blank" rel="noopener">
+          <img src="${escapeHtml(src)}" alt="${escapeHtml(c.title || "Content")} picture ${i + 1}" loading="lazy" />
+        </a>
+      `;
+    }).filter(Boolean).join("");
+    const count = (c.images || []).filter((img) => resolveImgSrc(img)).length;
+    return `
+      <article class="event-card">
+        <header class="event-card__header">
+          ${c.title ? `<h3 class="event-card__title">${escapeHtml(c.title)}</h3>` : ""}
+          ${c.category ? `<p class="event-card__meta">${escapeHtml(c.category)}</p>` : ""}
+        </header>
+        ${c.desc ? `<p class="event-card__desc">${escapeHtml(c.desc)}</p>` : ""}
+        ${imgList ? `<div class="event-card__gallery" data-count="${count}">${imgList}</div>` : ""}
+      </article>
+    `;
+  }).join("");
 }
 
 function renderEvents(d, items) {
@@ -510,7 +617,7 @@ async function loadCollection(name) {
 }
 
 async function init() {
-  const [hero, heroPhoto, about, services, workIntro, videos, events, eventItems, skills, contact, footer, projects, experience, education, homeFeatured, hireCta] = await Promise.all([
+  const [hero, heroPhoto, about, services, workIntro, videos, events, eventItems, skills, contact, footer, projects, experience, education, homeFeatured, hireCta, contentLead, contentItems] = await Promise.all([
     loadDoc("hero"),
     loadDoc("heroPhoto"),
     loadDoc("about"),
@@ -527,6 +634,8 @@ async function init() {
     loadCollection("education"),
     loadDoc("homeFeatured"),
     loadDoc("hireCta"),
+    loadDoc("contentLead"),
+    loadCollection("content"),
   ]);
 
   renderHero(hero);
@@ -537,9 +646,10 @@ async function init() {
   renderHomeFeatured(homeFeatured);
   renderHireCta(hireCta);
   if (projects && projects.length) renderProjects(projects);
-  if (projects && projects.length) renderFeaturedProjects(projects);
+  renderFeaturedProjects(projects, eventItems, contentItems);
   renderVideos(videos);
   renderEvents(events, eventItems);
+  renderContent(contentLead, contentItems);
   wireWorkPanes();
   renderExperience(experience);
   renderEducation(education);

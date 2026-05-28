@@ -159,6 +159,7 @@ const PAGES = {
     { id: "services",  label: "Services",     render: renderServicesEditor },
     { id: "workIntro", label: "Work Intro",   render: renderWorkIntroEditor },
     { id: "projects",  label: "Projects",     render: renderProjectsEditor },
+    { id: "content",   label: "Content",      render: renderContentEditor },
     { id: "videos",    label: "Videos",       render: renderVideosEditor },
     { id: "events",    label: "Events",       render: renderEventsEditor },
     { id: "jobs",      label: "Past Roles",   render: renderExperienceEditor },
@@ -1259,6 +1260,212 @@ async function addEvent() {
       order: maxOrder + 1,
     });
     renderEventsEditor();
+  } catch (err) {
+    alert("Add failed: " + err.message);
+  }
+}
+
+// ---------- Content (CRUD with image upload — content planning / writing samples) ----------
+async function renderContentEditor() {
+  const leadDoc = (await loadDoc("contentLead")) || { lead: "Writing, captions, and content planning samples." };
+  const items = await loadCollection("content");
+
+  portalMain.innerHTML = `
+    ${editorHead("Content", "Content planning, captions, and writing samples. The top one also appears on the home page Featured Work.")}
+    <form class="form" id="content-lead-form" style="margin-bottom:24px;">
+      ${field({ label: "Section lead (shown above the Content cards on Experience page)", name: "lead", value: leadDoc?.lead || "", textarea: true, rows: 2 })}
+      ${formActions("content-lead-status")}
+    </form>
+    <div style="margin-bottom:18px;">
+      <button class="btn btn--primary" id="add-content-btn">+ Add new content piece</button>
+    </div>
+    <div id="content-list-mgr">
+      ${items.length === 0 ? '<div class="empty">No content pieces yet — click "Add new content piece" to add your first one.</div>' : ""}
+      ${items.map((c) => contentCardHtml(c)).join("")}
+    </div>
+  `;
+  wireSave("content-lead-form", "content-lead-status", async (fd) => {
+    await saveDoc("contentLead", { lead: fd.get("lead") || "" });
+  });
+  document.getElementById("add-content-btn").addEventListener("click", () => addContent());
+  bindContentCards();
+}
+
+const contentCardHtml = (c) => {
+  const title = c.title || "(untitled content piece)";
+  const imgs = (c.images || []).map((img) => eventImageRowHtml(img)).join("");
+  return `
+    <article class="item-card" data-content-id="${escapeHtml(c.id)}">
+      <header class="item-card__head">
+        <h3 class="item-card__title">${escapeHtml(title)}</h3>
+        <div class="item-card__actions">
+          <button type="button" class="icon-btn" data-content-action="up">↑</button>
+          <button type="button" class="icon-btn" data-content-action="down">↓</button>
+          <button type="button" class="icon-btn icon-btn--danger" data-content-action="delete">Delete</button>
+        </div>
+      </header>
+      <form class="form" data-content-form>
+        ${field({ label: "Title", name: "title", value: c.title, placeholder: "e.g. Content calendar — September 2025" })}
+        ${field({ label: "Category", name: "category", value: c.category, placeholder: "e.g. Content Planning, Caption Writing, Editorial" })}
+        ${field({ label: "Description", name: "desc", value: c.desc, textarea: true, rows: 3, hint: "1–2 lines about this content piece." })}
+        ${field({ label: "Order (lower number shows first)", name: "order", type: "number", value: c.order ?? 1 })}
+        <div>
+          <span class="form__label" style="margin-bottom:8px; display:block;">Pictures</span>
+          <div class="img-urls" data-content-images>${imgs}</div>
+          <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+            <input type="file" accept="image/jpeg,image/png,image/webp" data-content-upload-input hidden />
+            <button type="button" class="btn btn--outline" data-content-upload-trigger>📁 Upload from computer</button>
+            <button type="button" class="list-mgr__add" data-content-add-url>+ Add URL / path</button>
+          </div>
+          <p class="form__hint" style="margin-top:8px;">
+            <strong>Upload:</strong> JPEG / PNG / WebP, max 350 KB per picture, ~2 uploads per piece (Firestore limit). Compress big photos at tinypng.com first.
+            <strong>URL / path:</strong> no size limit — paste like <code>assets/content/photo.jpg</code> or <code>https://…</code>.
+          </p>
+        </div>
+        <div class="form__actions">
+          <button type="submit" class="btn btn--primary">Save content</button>
+          <span class="form__status" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+    </article>
+  `;
+};
+
+function bindContentCards() {
+  $$("[data-content-id]", portalMain).forEach((card) => {
+    const id = card.dataset.contentId;
+    const form = $("[data-content-form]", card);
+    const imgList = $("[data-content-images]", card);
+    if (!form || !imgList) return;
+
+    imgList.addEventListener("input", (e) => {
+      if (e.target.matches('input[name="event-image-url"]')) {
+        const preview = e.target.parentElement.querySelector(".img-urls__preview");
+        if (preview) preview.src = e.target.value;
+      }
+    });
+
+    imgList.addEventListener("click", (e) => {
+      if (e.target.matches("[data-remove-event-img]")) {
+        e.target.closest("[data-event-img-row]").remove();
+      }
+    });
+
+    $("[data-content-add-url]", card).addEventListener("click", () => {
+      imgList.insertAdjacentHTML("beforeend", eventImageRowHtml({ kind: "url", src: "" }));
+      const last = imgList.querySelector("[data-event-img-row]:last-child input");
+      if (last) { last.focus(); last.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    });
+
+    const uploadInput = $("[data-content-upload-input]", card);
+    const uploadTrigger = $("[data-content-upload-trigger]", card);
+    const status = form.querySelector(".form__status");
+    uploadTrigger.addEventListener("click", () => uploadInput.click());
+    uploadInput.addEventListener("change", async () => {
+      const file = uploadInput.files?.[0];
+      if (!file) return;
+      const isImage = EVENT_IMAGE_TYPES.includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
+      if (!isImage) {
+        setStatus(status, "Please choose a JPEG, PNG, or WebP image.", "error");
+        uploadInput.value = "";
+        return;
+      }
+      if (file.size > MAX_EVENT_IMAGE_BYTES) {
+        setStatus(status, `That file is ${formatBytes(file.size)} — too big. Max is 350 KB. Compress at tinypng.com first.`, "error");
+        uploadInput.value = "";
+        return;
+      }
+      try {
+        const data = await fileToBase64(file);
+        imgList.insertAdjacentHTML("beforeend", eventImageRowHtml({
+          kind: "upload", data, type: file.type, fileName: file.name, size: file.size,
+        }));
+        setStatus(status, "Picture added. Click 'Save content' to keep it.", "success");
+        uploadInput.value = "";
+      } catch (err) {
+        setStatus(status, err.message || "Could not read the file.", "error");
+        uploadInput.value = "";
+      }
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const submit = form.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      setStatus(status, "Saving…", "pending");
+      try {
+        const fd = new FormData(form);
+        const rows = $$("[data-event-img-row]", imgList);
+        const images = rows.map((row) => {
+          if (row.dataset.kind === "upload" && row.dataset.uploadData) {
+            return {
+              kind: "upload",
+              data: row.dataset.uploadData,
+              type: row.dataset.uploadType || "image/jpeg",
+              fileName: row.dataset.uploadName || "image",
+              size: Number(row.dataset.uploadSize || 0),
+            };
+          }
+          const input = $("input[name='event-image-url']", row);
+          const src = input?.value.trim();
+          return src ? { kind: "url", src } : null;
+        }).filter(Boolean);
+
+        const totalBase64 = images.reduce((sum, img) =>
+          img.kind === "upload" ? sum + (img.data?.length || 0) : sum, 0);
+        if (totalBase64 > MAX_EVENT_DOC_BASE64_BYTES) {
+          throw new Error(`Total uploaded pictures are ~${formatBytes(totalBase64)} — over the ~${formatBytes(MAX_EVENT_DOC_BASE64_BYTES)} per-piece limit. Remove an upload or compress further.`);
+        }
+
+        await setDoc(doc(db, "content", id), {
+          title: fd.get("title") || "",
+          category: fd.get("category") || "",
+          desc: fd.get("desc") || "",
+          order: Number(fd.get("order")) || 1,
+          images,
+        });
+        setStatus(status, "Saved.", "success");
+        setTimeout(renderContentEditor, 600);
+      } catch (err) {
+        console.error(err);
+        setStatus(status, err.message || "Save failed.", "error");
+      } finally {
+        submit.disabled = false;
+      }
+    });
+
+    $$("[data-content-action]", card.querySelector(".item-card__head")).forEach((btn) => {
+      btn.addEventListener("click", () => handleContentAction(id, btn.dataset.contentAction));
+    });
+  });
+}
+
+async function handleContentAction(id, action) {
+  if (action === "delete") {
+    if (!confirm("Delete this content piece?")) return;
+    try { await deleteDoc(doc(db, "content", id)); renderContentEditor(); }
+    catch (err) { alert("Delete failed: " + err.message); }
+    return;
+  }
+  if (action === "up" || action === "down") {
+    try { await reorderItem("content", id, action); renderContentEditor(); }
+    catch (err) { alert("Reorder failed: " + err.message); }
+  }
+}
+
+async function addContent() {
+  const items = await loadCollection("content");
+  const maxOrder = items.reduce((m, p) => Math.max(m, p.order || 0), 0);
+  const id = `content-${Date.now().toString(36)}`;
+  try {
+    await setDoc(doc(db, "content", id), {
+      title: "New content piece",
+      category: "Content Planning",
+      desc: "",
+      images: [],
+      order: maxOrder + 1,
+    });
+    renderContentEditor();
   } catch (err) {
     alert("Add failed: " + err.message);
   }

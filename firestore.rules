@@ -53,6 +53,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /content/{contentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

@@ -81,6 +81,7 @@ export const SEED = {
       { mark: "Cv", name: "Canva" },
       { mark: "Fg", name: "Figma" },
       { mark: "Gw", name: "Google Workspace" },
+      { mark: "Tr", name: "Trello" },
     ],
   },
 

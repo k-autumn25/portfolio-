@@ -383,6 +383,12 @@ function renderEducation(items) {
   `).join("");
 }
 
+const TOOL_LOGOS = {
+  "canva": `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cv-g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00C4CC"/><stop offset="100%" stop-color="#7D2AE8"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#cv-g)"/><path d="M68 38 C 63 30, 50 28, 42 34 C 32 42, 32 60, 42 68 C 50 74, 63 72, 68 64" stroke="white" stroke-width="7" fill="none" stroke-linecap="round"/></svg>`,
+  "figma": `<svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg"><path d="M25 0 H50 V50 H25 A25 25 0 0 1 25 0 Z" fill="#FF7262"/><path d="M50 0 H75 A25 25 0 0 1 75 50 H50 Z" fill="#F24E1E"/><rect x="25" y="50" width="25" height="50" fill="#A259FF"/><circle cx="75" cy="75" r="25" fill="#1ABCFE"/><path d="M50 100 V125 A25 25 0 0 1 25 150 V100 Z" fill="#0ACF83"/></svg>`,
+  "google workspace": `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="6" width="38" height="38" rx="6" fill="#4285F4"/><rect x="56" y="6" width="38" height="38" rx="6" fill="#EA4335"/><rect x="6" y="56" width="38" height="38" rx="6" fill="#FBBC04"/><rect x="56" y="56" width="38" height="38" rx="6" fill="#34A853"/></svg>`,
+};
+
 function renderSkills(d) {
   if (!d) return;
   if (d.title) setHTML("skills-title", emphasize(d.title, d.titleEmphasis));
@@ -403,12 +409,19 @@ function renderSkills(d) {
   }
   const tools = $("tools-grid");
   if (tools && Array.isArray(d.tools)) {
-    tools.innerHTML = d.tools.map((t) => `
+    tools.innerHTML = d.tools.map((t) => {
+      const key = (t.name || "").toLowerCase().trim();
+      const logo = TOOL_LOGOS[key];
+      const visual = logo
+        ? `<span class="tool__logo" aria-hidden="true">${logo}</span>`
+        : `<span class="tool__mark">${escapeHtml(t.mark || "")}</span>`;
+      return `
       <div class="tool">
-        <span class="tool__mark">${escapeHtml(t.mark || "")}</span>
+        ${visual}
         <span class="tool__name">${escapeHtml(t.name || "")}</span>
       </div>
-    `).join("");
+    `;
+    }).join("");
   }
 }
 

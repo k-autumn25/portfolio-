@@ -1,5 +1,7 @@
 rules_version = '2';
 
+// Public reads for portfolio content (events, projects, experience, education,
+// content, site_content); writes admin-only. Redeployed 2026-05-29.
 service cloud.firestore {
   match /databases/{database}/documents {
 

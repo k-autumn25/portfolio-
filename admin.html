@@ -12,10 +12,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="admin.css?v=5" />
+  <link rel="stylesheet" href="styles.css?v=15" />
+  <link rel="stylesheet" href="admin.css?v=6" />
   <script>
-    (function(){ if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); })();
+    // Admin matches the main site: dark by default, unless an explicit light preference was saved.
+    (function(){ if (localStorage.getItem('theme') !== 'light') document.documentElement.setAttribute('data-theme','dark'); })();
   </script>
 </head>
 <body class="admin">

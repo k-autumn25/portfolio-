@@ -1,0 +1,6 @@
+# Scratch/experiment files — keep local, never publish
+*-preview.html
+
+# Dev/tooling artifacts
+.claude/
+.firebase/

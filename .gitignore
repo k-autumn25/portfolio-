@@ -1,3 +1,5 @@
 .vercel
 .claude/
 .firebase/
+firebase-debug.log
+*-preview.html

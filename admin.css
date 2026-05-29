@@ -790,3 +790,54 @@
   background: rgba(255, 255, 255, 0.06);
   border-color: var(--ink);
 }
+
+
+/* ============================================================
+   DEFAULT DARK — admin matches the dark site unconditionally.
+   These mirror the [data-theme="dark"] values above but apply
+   with no data-theme gate, so the portal stays dark even if the
+   attribute isn't set (browser cache / a saved light preference).
+   Appended last so they win over the original light defaults.
+   ============================================================ */
+.portal__sidebar { background: rgba(255, 255, 255, 0.03); }
+.portal__navlink:hover,
+.portal__subtab:hover { background: rgba(255, 255, 255, 0.05); }
+
+.cv-card,
+.setup-card,
+.item-card,
+.list-mgr__item,
+.message,
+.editor,
+.form__field,
+.editor__card,
+.hero-photo-preview {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.form input[type="text"],
+.form input[type="email"],
+.form input[type="url"],
+.form input[type="tel"],
+.form input[type="number"],
+.form input[type="date"],
+.form select,
+.form textarea {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.form input:focus,
+.form select:focus,
+.form textarea:focus {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--olive);
+}
+.form select option { background-color: #1a1a1a; color: #f5f1e8; }
+.form input::placeholder,
+.form textarea::placeholder { color: var(--ink-3); }
+
+.admin__status[data-kind="error"],
+.form__status[data-kind="error"] { color: #FF8484; }

@@ -15,8 +15,8 @@
   <link rel="stylesheet" href="styles.css?v=15" />
   <link rel="stylesheet" href="admin.css?v=6" />
   <script>
-    // Admin matches the main site: dark by default, unless an explicit light preference was saved.
-    (function(){ if (localStorage.getItem('theme') !== 'light') document.documentElement.setAttribute('data-theme','dark'); })();
+    // Admin always matches the main site's dark look — ignore any saved light preference.
+    (function(){ document.documentElement.setAttribute('data-theme','dark'); })();
   </script>
 </head>
 <body class="admin">

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Content Planning — Kang Somaliza</title>
+  <meta name="description" content="Editorial calendars, social series concepts, and multi-channel campaign rollouts by Kang Somaliza." />
+
+  <meta property="og:title" content="Content Planning — Kang Somaliza" />
+  <meta property="og:description" content="Editorial calendars and content planning work." />
+  <meta property="og:image" content="assets/profile.jpg" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23B7C28A'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Georgia,serif' font-size='17' font-weight='700' fill='%230E0E0E'%3EKS%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css?v=15" />
+  <script>
+    (function(){ if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); })();
+  </script>
+</head>
+<body data-page="content-planning">
+  <div class="blobs" aria-hidden="true">
+    <span class="blob blob--1"></span>
+    <span class="blob blob--2"></span>
+    <span class="blob blob--3"></span>
+  </div>
+  <div class="wash" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__brand" aria-label="Kang Somaliza — home">
+        <span class="nav__brand-mark">KS</span>
+        <span class="nav__brand-name">Kang Somaliza</span>
+      </a>
+      <nav class="nav__links" aria-label="Primary">
+        <a href="about.html">About</a>
+        <a href="experience.html">Experience</a>
+        <a href="skills.html">Skills</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <button class="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
+        <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+      <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="section experience" id="content-planning">
+      <div class="section__inner">
+        <div class="work__sub">
+          <header class="work__sub-header">
+            <span class="section__no">Folder 03</span>
+            <span class="section__divider"></span>
+            <span class="section__label">Content Planning</span>
+          </header>
+          <h2 class="section__title">
+            <span class="reveal-mask"><span class="reveal-mask__inner">Content <em>planning</em>.</span></span>
+          </h2>
+          <p class="work__sub-lead">Editorial calendars, social series concepts, and multi-channel campaign rollouts — strategy and planning work for Unilinks Global Education.</p>
+
+          <!-- Content loaded from admin portal -->
+          <div id="cms-content" style="margin-top:48px;">
+            <div class="work-pane__placeholder">
+              <p class="work-pane__placeholder-eyebrow">Content Planning</p>
+              <h3 class="work-pane__placeholder-title">Coming soon.</h3>
+              <p class="work-pane__placeholder-lead">Editorial calendars, content series concepts, and campaign rollouts will live here. Upload files from the admin portal and they&rsquo;ll appear on this page.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <span class="footer__mark">KS</span>
+        <span class="footer__name">Kang Somaliza</span>
+      </div>
+      <p class="footer__copy">&copy; 2026 Kang Somaliza <span class="footer__sep">·</span> Made in Phnom Penh</p>
+      <a href="#top" class="footer__top">Back to top <span aria-hidden="true">↑</span></a>
+    </div>
+  </footer>
+
+  <script src="script.js?v=5"></script>
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    const container = document.getElementById('cms-content');
+    function esc(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function resolve(img){ if(!img)return''; if(typeof img==='string')return img; if(img.kind==='upload'&&img.data){return `data:${img.type||'image/jpeg'};base64,${img.data}`;} return img.src||''; }
+
+    try {
+      const snap = await getDocs(query(collection(db, 'content'), orderBy('order', 'asc')));
+      const items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (items.length) {
+        container.innerHTML = items.map((c, i) => {
+          const meta = [c.category, c.year].filter(Boolean).map(esc).join(' / ');
+          const gallery = (c.images||[]).map(img => { const s = resolve(img); return s ? `<a class="project__img" href="${esc(s)}" target="_blank" rel="noopener"><img src="${esc(s)}" alt="${esc(c.title||'Content')}" loading="lazy" /></a>` : ''; }).filter(Boolean).join('');
+          return `
+            <article class="project">
+              <header class="project__header">
+                <span class="project__no">C/${String(i+1).padStart(2,'0')}</span>
+                <div class="project__heading">
+                  ${c.title?`<h3 class="project__title">${esc(c.title)}</h3>`:''}
+                  ${meta?`<p class="project__meta">${meta}</p>`:''}
+                </div>
+              </header>
+              ${c.desc?`<p class="project__desc">${esc(c.desc)}</p>`:''}
+              ${gallery?`<div class="project__grid project__grid--3 project__grid--landscape">${gallery}</div>`:''}
+            </article>`;
+        }).join('');
+      }
+    } catch(e) { console.warn('[content] CMS load failed:', e.message); }
+  </script>
+</body>
+</html>

@@ -289,3 +289,52 @@ const _premium = (() => {
     document.addEventListener('content:rendered', attachTilt);
   }
 })();
+
+
+/* ============================
+   Work-pane filter (Design / Content / Video / Events)
+   Pure DOM logic — wired here so the tabs work even if content.js
+   (which depends on the Firebase CDN) fails to load offline / over file://.
+   Guarded by data-wired so it never double-binds with content.js.
+   ============================ */
+(() => {
+  const bar = document.getElementById('project-filters');
+  if (!bar || bar.dataset.wired === 'true') return;
+  bar.dataset.wired = 'true';
+
+  const showPane = (name) => {
+    document.querySelectorAll('.work-pane').forEach((pane) => {
+      pane.hidden = pane.dataset.pill !== name;
+    });
+  };
+
+  const setActive = (filter) => {
+    let matched = false;
+    bar.querySelectorAll('.project-filter').forEach((b) => {
+      const active = b.dataset.filter === filter;
+      if (active) matched = true;
+      b.classList.toggle('is-active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    if (matched) showPane(filter);
+    return matched;
+  };
+
+  const hash = (location.hash || '').replace(/^#/, '').toLowerCase();
+  const allowed = { content: 'content', video: 'video', events: 'events', design: 'design' };
+  if (!setActive(allowed[hash] || '')) {
+    const activeBtn = bar.querySelector('.project-filter.is-active') || bar.querySelector('.project-filter');
+    if (activeBtn) showPane(activeBtn.dataset.filter);
+  }
+
+  bar.addEventListener('click', (e) => {
+    const btn = e.target.closest('.project-filter');
+    if (!btn) return;
+    bar.querySelectorAll('.project-filter').forEach((b) => {
+      const active = b === btn;
+      b.classList.toggle('is-active', active);
+      b.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    showPane(btn.dataset.filter);
+  });
+})();

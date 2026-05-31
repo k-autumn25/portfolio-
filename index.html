@@ -90,7 +90,67 @@
     transition: all 0.25s ease;
   }
   .nav__cta:hover { background: var(--ink); color: var(--bg); }
-  @media (max-width: 720px) { .nav__links { display: none; } }
+  .nav__links-cta { display: none; }
+
+  /* hamburger button — hidden on desktop */
+  .nav__toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 40px; height: 40px;
+    padding: 8px;
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .nav__toggle span {
+    display: block;
+    height: 1.5px;
+    width: 100%;
+    background: var(--ink);
+    border-radius: 2px;
+    transition: transform 0.3s ease, opacity 0.2s ease;
+  }
+  .nav.is-open .nav__toggle span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .nav.is-open .nav__toggle span:nth-child(2) { opacity: 0; }
+  .nav.is-open .nav__toggle span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+  @media (max-width: 720px) {
+    .nav__toggle { display: flex; }
+    .nav__cta { display: none; }
+    .nav__links-cta { display: block; }
+
+    .nav__links {
+      position: fixed;
+      top: 72px; right: 0; bottom: 0;
+      width: min(82vw, 320px);
+      flex-direction: column;
+      gap: 0;
+      background: #0E0E0E;
+      border-left: 1px solid var(--line-2);
+      padding: 12px var(--pad-x) 24px;
+      transform: translateX(100%);
+      pointer-events: none;
+      transition: transform 0.3s ease;
+    }
+    .nav.is-open .nav__links {
+      transform: translateX(0);
+      pointer-events: auto;
+      /* dim the rest of the page so the drawer text reads clearly */
+      box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6);
+    }
+    .nav__links a {
+      padding: 18px 2px;
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: 0;
+      color: var(--ink);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav__links a:last-child { border-bottom: 0; }
+  }
 
   /* ========== HERO ========== */
   .hero {
@@ -838,15 +898,19 @@
 <body>
 
 <!-- NAV -->
-<nav class="nav">
+<nav class="nav" id="nav">
   <a href="index.html" class="nav__brand">Kang Somaliza</a>
   <div class="nav__links">
     <a href="about.html">About</a>
     <a href="experience.html">Experience</a>
     <a href="skills.html">Skills</a>
     <a href="contact.html">Contact</a>
+    <a href="contact.html" class="nav__links-cta">Let's Talk →</a>
   </div>
   <a href="contact.html" class="nav__cta">Let's Talk</a>
+  <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
 
 <!-- HERO -->
@@ -1016,6 +1080,34 @@
       if (lightboxZoom.classList.contains('is-open')) closeZoom();
       else if (lightbox.classList.contains('is-open')) closeLightbox();
     });
+  })();
+
+  /* Mobile hamburger menu */
+  (function () {
+    const nav = document.getElementById('nav');
+    if (!nav) return;
+    const toggle = nav.querySelector('.nav__toggle');
+    if (!toggle) return;
+
+    const close = () => {
+      nav.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+
+    toggle.addEventListener('click', () => {
+      const isOpen = nav.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    nav.querySelectorAll('.nav__links a').forEach(a => a.addEventListener('click', close));
+
+    document.addEventListener('click', (e) => {
+      if (!nav.classList.contains('is-open')) return;
+      if (e.target.closest('.nav__links') || e.target.closest('.nav__toggle')) return;
+      close();
+    });
+
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
   })();
 </script>
 

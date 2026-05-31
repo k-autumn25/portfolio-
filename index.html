@@ -953,39 +953,39 @@
   <div class="work__grid">
     <!-- Folder 1: Artwork -->
     <article class="folder" data-href="artwork.html">
-      <span class="folder__tab">Artwork</span>
+      <span class="folder__tab" id="folder-1-tab">Artwork</span>
       <div class="folder__pocket">
         <div class="folder__photo folder__photo--1" style="background-image: url('assets/work/taiwan/taiwan-1.png')"></div>
         <div class="folder__photo folder__photo--2" style="background-image: url('assets/work/taiwan/taiwan-2.png')"></div>
         <div class="folder__photo folder__photo--3" style="background-image: url('assets/work/taiwan/taiwan-3.png')"></div>
-        <h3 class="folder__title">Artwork</h3>
-        <p class="folder__excerpt">Campaign visuals, illustrations, mascots, and brand work — projects designed for Unilinks Global Education and beyond.</p>
+        <h3 class="folder__title" id="folder-1-title">Artwork</h3>
+        <p class="folder__excerpt" id="folder-1-desc">Campaign visuals, illustrations, mascots, and brand work — projects designed for Unilinks Global Education and beyond.</p>
         <span class="folder__count">Open folder →</span>
       </div>
     </article>
 
     <!-- Folder 2: Events -->
     <article class="folder" data-href="events.html">
-      <span class="folder__tab">Event</span>
+      <span class="folder__tab" id="folder-2-tab">Event</span>
       <div class="folder__pocket">
         <div class="folder__photo folder__photo--1" style="background-image: url('assets/events/event-1.jpg')"></div>
         <div class="folder__photo folder__photo--2" style="background-image: url('assets/events/event-2.jpg')"></div>
         <div class="folder__photo folder__photo--3" style="background-image: url('assets/events/event-3.jpg')"></div>
-        <h3 class="folder__title">Event</h3>
-        <p class="folder__excerpt">On-the-ground moments from study-abroad fairs, campus visits, and Unilinks campaign events.</p>
+        <h3 class="folder__title" id="folder-2-title">Event</h3>
+        <p class="folder__excerpt" id="folder-2-desc">On-the-ground moments from study-abroad fairs, campus visits, and Unilinks campaign events.</p>
         <span class="folder__count">Open folder →</span>
       </div>
     </article>
 
     <!-- Folder 3: Content Planning -->
     <article class="folder" data-href="content-planning.html">
-      <span class="folder__tab">Content Planning</span>
+      <span class="folder__tab" id="folder-3-tab">Content Planning</span>
       <div class="folder__pocket">
         <div class="folder__photo folder__photo--1" style="background-image: url('assets/work/brand-moments/entertainment.png')"></div>
         <div class="folder__photo folder__photo--2" style="background-image: url('assets/work/brand-moments/khmer-new-year.png')"></div>
         <div class="folder__photo folder__photo--3" style="background-image: url('assets/work/brand-moments/study-malaysia.png')"></div>
-        <h3 class="folder__title">Content Planning</h3>
-        <p class="folder__excerpt">Editorial calendars, social series concepts, and multi-channel campaign rollouts.</p>
+        <h3 class="folder__title" id="folder-3-title">Content Planning</h3>
+        <p class="folder__excerpt" id="folder-3-desc">Editorial calendars, social series concepts, and multi-channel campaign rollouts.</p>
         <span class="folder__count">Open folder →</span>
       </div>
     </article>
@@ -1108,6 +1108,34 @@
     });
 
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  })();
+</script>
+
+<!-- Featured folder cards: pull editable text from the admin (Firestore).
+     If the doc/field is missing, the hardcoded text above stays as-is. -->
+<script type="module">
+  import { db } from "./firebase-config.js";
+  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+  (async () => {
+    try {
+      const snap = await getDoc(doc(db, "site_content", "homeFolders"));
+      if (!snap.exists()) return;
+      const d = snap.data();
+      const set = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val != null && String(val).trim() !== "") el.textContent = val;
+      };
+      for (let i = 1; i <= 3; i++) {
+        const f = d["folder" + i];
+        if (!f) continue;
+        set(`folder-${i}-tab`, f.tab);
+        set(`folder-${i}-title`, f.title);
+        set(`folder-${i}-desc`, f.desc);
+      }
+    } catch (e) {
+      console.warn("[home folders] using fallback text:", e.message);
+    }
   })();
 </script>
 

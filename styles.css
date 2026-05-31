@@ -989,6 +989,33 @@ button { font: inherit; }
   border-radius: 14px;
   background: var(--cream);
 }
+/* Content cards that carry a link become clickable as a whole. */
+.event-card--link {
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.event-card--link:hover {
+  transform: translateY(-3px);
+  border-color: var(--line-2, var(--line));
+  box-shadow: 0 16px 32px -20px rgba(0, 0, 0, 0.55);
+}
+.event-card--link:focus-visible {
+  outline: 2px solid var(--olive, currentColor);
+  outline-offset: 3px;
+}
+.event-card__open {
+  justify-self: start;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--olive-deep, var(--ink-2));
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+.event-card--link:hover .event-card__open {
+  color: var(--olive, var(--olive-deep));
+  transform: translateX(3px);
+}
 .event-card__header {
   display: flex;
   flex-direction: column;

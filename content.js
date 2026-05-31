@@ -385,17 +385,45 @@ function renderContent(leadDoc, items) {
       `;
     }).filter(Boolean).join("");
     const count = (c.images || []).filter((img) => resolveImgSrc(img)).length;
+    const link = String(c.link || "").trim();
+    const linkAttr = link ? ` data-href="${escapeHtml(link)}" role="link" tabindex="0"` : "";
+    const linkClass = link ? " event-card--link" : "";
     return `
-      <article class="event-card">
+      <article class="event-card${linkClass}"${linkAttr}>
         <header class="event-card__header">
           ${c.title ? `<h3 class="event-card__title">${escapeHtml(c.title)}</h3>` : ""}
           ${c.category ? `<p class="event-card__meta">${escapeHtml(c.category)}</p>` : ""}
         </header>
         ${c.desc ? `<p class="event-card__desc">${escapeHtml(c.desc)}</p>` : ""}
         ${imgList ? `<div class="event-card__gallery" data-count="${count}">${imgList}</div>` : ""}
+        ${link ? `<span class="event-card__open" aria-hidden="true">View →</span>` : ""}
       </article>
     `;
   }).join("");
+
+  // Whole-card click → open the piece's link. Clicks on a photo still open
+  // that photo (we skip them here). Works for external (new tab) and internal URLs.
+  if (strip.dataset.linkWired !== "true") {
+    strip.dataset.linkWired = "true";
+    const openCard = (card) => {
+      const href = card?.dataset.href;
+      if (!href) return;
+      if (/^https?:\/\//i.test(href)) window.open(href, "_blank", "noopener");
+      else window.location.href = href;
+    };
+    strip.addEventListener("click", (e) => {
+      if (e.target.closest(".event-card__img")) return;
+      const card = e.target.closest(".event-card--link[data-href]");
+      if (card) openCard(card);
+    });
+    strip.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const card = e.target.closest(".event-card--link[data-href]");
+      if (!card) return;
+      e.preventDefault();
+      openCard(card);
+    });
+  }
 }
 
 function renderEvents(d, items) {

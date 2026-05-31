@@ -256,6 +256,19 @@
   grid-template-columns: 1fr 1fr;
   gap: 18px;
 }
+.form__subhead {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink, currentColor);
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line, rgba(127, 127, 127, 0.2));
+}
+.form__subhead:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
 .form__field {
   display: flex;
   flex-direction: column;

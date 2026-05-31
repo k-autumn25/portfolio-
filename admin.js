@@ -465,16 +465,39 @@ const DEFAULT_HIRE_CTA = {
   buttonText: "Hire Me",
   buttonHref: "contact.html",
 };
+// The three "Featured Work" folder cards on the home page (Artwork / Event / Content Planning).
+const DEFAULT_HOME_FOLDERS = {
+  folder1: {
+    tab: "Artwork",
+    title: "Artwork",
+    desc: "Campaign visuals, illustrations, mascots, and brand work — projects designed for Unilinks Global Education and beyond.",
+  },
+  folder2: {
+    tab: "Event",
+    title: "Event",
+    desc: "On-the-ground moments from study-abroad fairs, campus visits, and Unilinks campaign events.",
+  },
+  folder3: {
+    tab: "Content Planning",
+    title: "Content Planning",
+    desc: "Editorial calendars, social series concepts, and multi-channel campaign rollouts.",
+  },
+};
 
 async function renderHeroEditor() {
-  const [hero, featured, hireCta] = await Promise.all([
+  const [hero, featured, hireCta, homeFolders] = await Promise.all([
     loadDoc("hero"),
     loadDoc("homeFeatured"),
     loadDoc("hireCta"),
+    loadDoc("homeFolders"),
   ]);
   const data = hero || SEED.hero;
   const featuredData = featured || DEFAULT_HOME_FEATURED;
   const hireData = hireCta || DEFAULT_HIRE_CTA;
+  const foldersData = homeFolders || DEFAULT_HOME_FOLDERS;
+  const f1 = foldersData.folder1 || DEFAULT_HOME_FOLDERS.folder1;
+  const f2 = foldersData.folder2 || DEFAULT_HOME_FOLDERS.folder2;
+  const f3 = foldersData.folder3 || DEFAULT_HOME_FOLDERS.folder3;
 
   portalMain.innerHTML = `
     ${editorHead("Hero", "The first thing visitors see.")}
@@ -513,6 +536,31 @@ async function renderHeroEditor() {
       </div>
       ${formActions("hire-cta-status")}
     </form>
+
+    ${editorHead("Featured folders", "The three folder cards in the Featured Work section on your home page (Artwork / Event / Content Planning). Only the text changes here — the photos and the page each card opens stay the same.")}
+    <form class="form" id="home-folders-form">
+      <h3 class="form__subhead">Folder 1</h3>
+      <div class="form__row">
+        ${field({ label: "Tab label (small label on the folder tab)", name: "f1-tab", value: f1.tab })}
+        ${field({ label: "Title", name: "f1-title", value: f1.title })}
+      </div>
+      ${field({ label: "Description", name: "f1-desc", value: f1.desc, textarea: true, rows: 3 })}
+
+      <h3 class="form__subhead">Folder 2</h3>
+      <div class="form__row">
+        ${field({ label: "Tab label", name: "f2-tab", value: f2.tab })}
+        ${field({ label: "Title", name: "f2-title", value: f2.title })}
+      </div>
+      ${field({ label: "Description", name: "f2-desc", value: f2.desc, textarea: true, rows: 3 })}
+
+      <h3 class="form__subhead">Folder 3</h3>
+      <div class="form__row">
+        ${field({ label: "Tab label", name: "f3-tab", value: f3.tab })}
+        ${field({ label: "Title", name: "f3-title", value: f3.title })}
+      </div>
+      ${field({ label: "Description", name: "f3-desc", value: f3.desc, textarea: true, rows: 3 })}
+      ${formActions("home-folders-status")}
+    </form>
   `;
 
   await renderHeroPhotoCard();
@@ -546,6 +594,14 @@ async function renderHeroEditor() {
       lead: fd.get("lead"),
       buttonText: fd.get("buttonText"),
       buttonHref: fd.get("buttonHref"),
+    });
+  });
+
+  wireSave("home-folders-form", "home-folders-status", async (fd) => {
+    await saveDoc("homeFolders", {
+      folder1: { tab: fd.get("f1-tab"), title: fd.get("f1-title"), desc: fd.get("f1-desc") },
+      folder2: { tab: fd.get("f2-tab"), title: fd.get("f2-title"), desc: fd.get("f2-desc") },
+      folder3: { tab: fd.get("f3-tab"), title: fd.get("f3-title"), desc: fd.get("f3-desc") },
     });
   });
 }
@@ -1308,6 +1364,7 @@ const contentCardHtml = (c) => {
         ${field({ label: "Title", name: "title", value: c.title, placeholder: "e.g. Content calendar — September 2025" })}
         ${field({ label: "Category", name: "category", value: c.category, placeholder: "e.g. Content Planning, Caption Writing, Editorial" })}
         ${field({ label: "Description", name: "desc", value: c.desc, textarea: true, rows: 3, hint: "1–2 lines about this content piece." })}
+        ${field({ label: "Link (optional)", name: "link", value: c.link, type: "url", hint: "Makes the whole card clickable. Paste a full link like https://facebook.com/... or a page on your site like experience.html. Leave blank for no link." })}
         ${field({ label: "Order (lower number shows first)", name: "order", type: "number", value: c.order ?? 1 })}
         <div>
           <span class="form__label" style="margin-bottom:8px; display:block;">Pictures</span>
@@ -1421,6 +1478,7 @@ function bindContentCards() {
           title: fd.get("title") || "",
           category: fd.get("category") || "",
           desc: fd.get("desc") || "",
+          link: (fd.get("link") || "").trim(),
           order: Number(fd.get("order")) || 1,
           images,
         });
@@ -1462,6 +1520,7 @@ async function addContent() {
       title: "New content piece",
       category: "Content Planning",
       desc: "",
+      link: "",
       images: [],
       order: maxOrder + 1,
     });

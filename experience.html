@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,700&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="styles.css?v=16" />
+  <link rel="stylesheet" href="styles.css?v=17" />
   <script>
     (function(){ if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); })();
   </script>
@@ -65,46 +65,57 @@
   <main id="top">
     <section class="section experience" id="experience">
       <div class="section__inner">
-        <div class="work__sub" id="services">
-          <header class="work__sub-header">
-            <span class="section__no">01.1</span>
-            <span class="section__divider"></span>
-            <span class="section__label">Services</span>
-          </header>
-
-          <h2 class="section__title" id="services-title">
-            <span class="reveal-mask"><span class="reveal-mask__inner">What I can do <em>for you</em>.</span></span>
+        <div class="work__sub services" id="services">
+          <h2 class="services__mega" aria-label="Services">
+            <span class="reveal-mask"><span class="reveal-mask__inner"><em>S</em>ervices</span></span>
           </h2>
+
+          <p class="services__intro" id="services-title">What I can do for you.</p>
 
           <div class="services__grid" id="services-grid">
             <article class="service">
-              <span class="service__no">S/01</span>
-              <h3 class="service__title">Social Media Content</h3>
+              <div class="service__head">
+                <span class="service__no">01</span>
+                <h3 class="service__title">Social Media Content</h3>
+              </div>
               <p class="service__desc">Posts and feed visuals tuned to each platform &mdash; built to match your brand voice and stop the scroll.</p>
+              <ul class="service__tags"><li>Instagram</li><li>Facebook</li><li>TikTok</li><li>Canva</li></ul>
             </article>
 
             <article class="service">
-              <span class="service__no">S/02</span>
-              <h3 class="service__title">Poster &amp; Brochure Design</h3>
+              <div class="service__head">
+                <span class="service__no">02</span>
+                <h3 class="service__title">Poster &amp; Brochure Design</h3>
+              </div>
               <p class="service__desc">Print-ready visuals for events, campaigns and announcements &mdash; clean in hand, sharp on screen.</p>
+              <ul class="service__tags"><li>Print</li><li>Layout</li><li>Typography</li></ul>
             </article>
 
             <article class="service">
-              <span class="service__no">S/03</span>
-              <h3 class="service__title">Content Planning</h3>
+              <div class="service__head">
+                <span class="service__no">03</span>
+                <h3 class="service__title">Content Planning</h3>
+              </div>
               <p class="service__desc">Calendars, copy direction and scheduling that keep your channels consistent week after week.</p>
+              <ul class="service__tags"><li>Content calendar</li><li>Copywriting</li><li>Scheduling</li></ul>
             </article>
 
             <article class="service">
-              <span class="service__no">S/04</span>
-              <h3 class="service__title">Video Scripting &amp; Direction</h3>
+              <div class="service__head">
+                <span class="service__no">04</span>
+                <h3 class="service__title">Video Scripting &amp; Direction</h3>
+              </div>
               <p class="service__desc">Short-form scripts and on-set direction for clear, on-brand storytelling.</p>
+              <ul class="service__tags"><li>Scripts</li><li>Short-form</li><li>Direction</li></ul>
             </article>
 
             <article class="service">
-              <span class="service__no">S/05</span>
-              <h3 class="service__title">Event Marketing Materials</h3>
+              <div class="service__head">
+                <span class="service__no">05</span>
+                <h3 class="service__title">Event Marketing Materials</h3>
+              </div>
               <p class="service__desc">Cohesive visuals for booths, signage and event collateral &mdash; from teaser to thank-you.</p>
+              <ul class="service__tags"><li>Booths</li><li>Signage</li><li>Collateral</li></ul>
             </article>
           </div>
         </div>
@@ -360,7 +371,7 @@
     </div>
   </footer>
 
-  <script type="module" src="content.js?v=11"></script>
+  <script type="module" src="content.js?v=12"></script>
   <script src="script.js?v=5"></script>
 </body>
 </html>

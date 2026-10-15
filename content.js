@@ -93,16 +93,23 @@ function renderAbout(d) {
 
 function renderServices(d) {
   if (!d) return;
-  if (d.title) setHTML("services-title", emphasize(d.title, d.titleEmphasis) + ".");
+  if (d.title) setText("services-title", d.title);
   const grid = $("services-grid");
   if (!grid || !Array.isArray(d.items)) return;
-  grid.innerHTML = d.items.map((s) => `
+  grid.innerHTML = d.items.map((s, i) => {
+    // Old saves used "S/01" — show just the digits in the new layout
+    const no = (s.no || String(i + 1).padStart(2, "0")).replace(/^S\//i, "");
+    const tags = Array.isArray(s.tags) ? s.tags : [];
+    return `
     <article class="service">
-      <span class="service__no">${escapeHtml(s.no || "")}</span>
-      <h3 class="service__title">${escapeHtml(s.title || "")}</h3>
+      <div class="service__head">
+        <span class="service__no">${escapeHtml(no)}</span>
+        <h3 class="service__title">${escapeHtml(s.title || "")}</h3>
+      </div>
       <p class="service__desc">${escapeHtml(s.desc || "")}</p>
-    </article>
-  `).join("");
+      <ul class="service__tags">${tags.map((t) => `<li>${escapeHtml(t)}</li>`).join("")}</ul>
+    </article>`;
+  }).join("");
 }
 
 function renderWorkIntro(d) {

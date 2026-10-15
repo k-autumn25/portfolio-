@@ -29,13 +29,12 @@ export const SEED = {
 
   services: {
     title: "What I can do for you.",
-    titleEmphasis: "for you",
     items: [
-      { no: "S/01", title: "Social Media Content", desc: "Posts and feed visuals tuned to each platform — built to match your brand voice and stop the scroll." },
-      { no: "S/02", title: "Poster & Brochure Design", desc: "Print-ready visuals for events, campaigns and announcements — clean in hand, sharp on screen." },
-      { no: "S/03", title: "Content Planning", desc: "Calendars, copy direction and scheduling that keep your channels consistent week after week." },
-      { no: "S/04", title: "Video Scripting & Direction", desc: "Short-form scripts and on-set direction for clear, on-brand storytelling." },
-      { no: "S/05", title: "Event Marketing Materials", desc: "Cohesive visuals for booths, signage and event collateral — from teaser to thank-you." },
+      { no: "01", title: "Social Media Content", desc: "Posts and feed visuals tuned to each platform — built to match your brand voice and stop the scroll.", tags: ["Instagram", "Facebook", "TikTok", "Canva"] },
+      { no: "02", title: "Poster & Brochure Design", desc: "Print-ready visuals for events, campaigns and announcements — clean in hand, sharp on screen.", tags: ["Print", "Layout", "Typography"] },
+      { no: "03", title: "Content Planning", desc: "Calendars, copy direction and scheduling that keep your channels consistent week after week.", tags: ["Content calendar", "Copywriting", "Scheduling"] },
+      { no: "04", title: "Video Scripting & Direction", desc: "Short-form scripts and on-set direction for clear, on-brand storytelling.", tags: ["Scripts", "Short-form", "Direction"] },
+      { no: "05", title: "Event Marketing Materials", desc: "Cohesive visuals for booths, signage and event collateral — from teaser to thank-you.", tags: ["Booths", "Signage", "Collateral"] },
     ],
   },
 

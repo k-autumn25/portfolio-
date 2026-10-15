@@ -746,10 +746,9 @@ async function renderServicesEditor() {
   const data = (await loadDoc("services")) || SEED.services;
   const items = Array.isArray(data.items) ? data.items : [];
   portalMain.innerHTML = `
-    ${editorHead("Services", "The 'What I can do for you' section.")}
+    ${editorHead("Services", "The Services section on the Experience page.")}
     <form class="form" id="services-form">
-      ${field({ label: "Section title", name: "title", value: data.title })}
-      ${field({ label: "Italicize which word/phrase in title", name: "titleEmphasis", value: data.titleEmphasis })}
+      ${field({ label: "Intro line (under the big SERVICES heading)", name: "title", value: data.title })}
       <div>
         <span class="form__label" style="margin-bottom:8px; display:block;">Service items</span>
         <div class="list-mgr" id="services-items">${items.map(serviceItemHtml).join("")}</div>
@@ -758,17 +757,17 @@ async function renderServicesEditor() {
       ${formActions("services-status")}
     </form>
   `;
-  bindListMgr("services-items", "services-add", () => serviceItemHtml({ no: "S/0X", title: "", desc: "" }));
+  bindListMgr("services-items", "services-add", () => serviceItemHtml({ no: "0X", title: "", desc: "", tags: [] }));
   wireSave("services-form", "services-status", async (fd) => {
     const itemsRoot = document.getElementById("services-items");
     const items = $$(".list-mgr__item", itemsRoot).map((row) => ({
       no: $('[name="item-no"]', row).value.trim(),
       title: $('[name="item-title"]', row).value.trim(),
       desc: $('[name="item-desc"]', row).value.trim(),
+      tags: $('[name="item-tags"]', row).value.split(",").map((t) => t.trim()).filter(Boolean),
     })).filter((i) => i.title);
     await saveDoc("services", {
       title: fd.get("title"),
-      titleEmphasis: fd.get("titleEmphasis"),
       items,
     });
   });
@@ -796,6 +795,10 @@ const serviceItemHtml = (s) => `
     <label class="form__field">
       <span class="form__label">Description</span>
       <textarea name="item-desc" rows="2">${escapeHtml(s.desc)}</textarea>
+    </label>
+    <label class="form__field">
+      <span class="form__label">Tags (comma-separated)</span>
+      <input type="text" name="item-tags" value="${escapeHtml((s.tags || []).join(", "))}" />
     </label>
   </div>`;
 

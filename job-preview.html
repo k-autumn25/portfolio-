@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unilinks Global Education — Kang Somaliza</title>
+  <meta name="description" content="Services, selected work, and past roles by Kang Somaliza — designer, content creator, and operations support based in Phnom Penh." />
+
+  <meta property="og:title" content="Experience — Kang Somaliza" />
+  <meta property="og:description" content="Services, selected work, and past roles." />
+  <meta property="og:image" content="assets/profile.jpg" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%236B7A3A'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Inter,Arial,sans-serif' font-size='17' font-weight='700' fill='%23F2EDE2'%3EKS%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css?v=18" />
+  <style>
+    /* Preview: Inter everywhere */
+    :root { --serif: 'Inter', system-ui, sans-serif; --sans: 'Inter', system-ui, sans-serif; }
+    /* Preview: no tag pills; title + description only */
+    .service__tags { display: none; }
+    .service { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+    @media (max-width: 900px) { .service { grid-template-columns: 1fr; } }
+    /* Preview: job row links to its own detail page */
+    .job-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto;
+      gap: clamp(24px, 4vw, 64px);
+      align-items: baseline;
+      padding: clamp(36px, 5vw, 64px) 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      color: inherit;
+      text-decoration: none;
+    }
+    .job-row__name {
+      font-family: var(--serif);
+      font-size: clamp(32px, 4.4vw, 64px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.02;
+      color: var(--ink);
+      transition: color 0.25s ease;
+    }
+    .job-row__role {
+      font-size: clamp(16px, 1.4vw, 20px);
+      color: var(--ink-2);
+    }
+    .job-row__more {
+      font-size: 14px;
+      color: var(--olive);
+      white-space: nowrap;
+    }
+    .job-row__more span { display: inline-block; transition: transform 0.25s ease; }
+    .job-row:hover .job-row__name { color: var(--olive); }
+    .job-row:hover .job-row__more span { transform: translateX(6px); }
+    @media (max-width: 900px) { .job-row { grid-template-columns: 1fr; gap: 12px; } }
+    .jobd { padding-top: clamp(120px, 14vw, 180px); }
+    .jobd__back { display: inline-block; margin-bottom: clamp(32px, 5vw, 56px); font-size: 14px; color: var(--olive); text-decoration: none; }
+    .jobd__back:hover { text-decoration: underline; }
+    .jobd__h { font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); margin: clamp(64px, 8vw, 110px) 0 24px; }
+    .jobd__group { margin-bottom: clamp(40px, 5vw, 64px); }
+    .jobd__group-title { font-family: var(--serif); font-size: clamp(22px, 2.4vw, 32px); font-weight: 500; color: var(--ink); margin-bottom: 6px; }
+    .jobd__group-meta { font-size: 14px; color: var(--ink-3); margin-bottom: 12px; }
+    .jobd__group-desc { font-size: clamp(15px, 1.3vw, 18px); line-height: 1.65; color: var(--ink-2); max-width: 62ch; margin-bottom: 22px; }
+    .jobd__soon { padding: clamp(40px, 6vw, 72px) 24px; border: 1px dashed var(--ink-3); border-radius: 6px; text-align: center; }
+    .jobd__soon-title { font-family: var(--serif); font-size: clamp(24px, 2.6vw, 34px); color: var(--ink); margin-bottom: 8px; }
+    .jobd__soon p { color: var(--ink-3); font-size: 14px; }
+    .jobd__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .jobd__grid a { display: block; aspect-ratio: 4 / 5; overflow: hidden; border-radius: 6px; background: var(--line); }
+    .jobd__grid--wide a { aspect-ratio: 4 / 3; }
+    .jobd__grid img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+    .jobd__grid a:hover img { transform: scale(1.04); }
+    /* Preview: plain "KS" logo, same as the homepage */
+    .nav__brand--ks { font-weight: 500; font-size: 18px; color: var(--ink); text-decoration: none; }
+  </style>
+  <script>
+    (function(){ if (localStorage.getItem('theme') === 'dark') document.documentElement.setAttribute('data-theme','dark'); })();
+  </script>
+</head>
+<body data-page="experience">
+  <div class="blobs" aria-hidden="true">
+    <span class="blob blob--1"></span>
+    <span class="blob blob--2"></span>
+    <span class="blob blob--3"></span>
+  </div>
+  <div class="wash" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a href="hero-preview.html" class="nav__brand nav__brand--ks" aria-label="Kang Somaliza — home">KS</a>
+
+      <nav class="nav__links" aria-label="Primary">
+        <a href="about-preview.html">About</a>
+        <a href="experience-preview.html">Experience</a>
+        <a href="contact-preview.html">Contact</a>
+      </nav>
+
+      <button class="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
+        <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+        </svg>
+        <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+
+      <button class="nav__toggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="nav">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="section jobd">
+      <div class="section__inner">
+        <a class="jobd__back" href="experience-preview.html#job">&larr; Back to Experience</a>
+
+        <div id="v2-job" data-job="unilinks">
+
+        <article class="job">
+          <header class="job__head">
+            <div class="job__company">
+              <h1 class="job__name">Unilinks Global Education</h1>
+              <p class="job__role">Marketing &amp; Operations</p>
+            </div>
+            <div class="job__when">
+              <p class="job__period">2024 &mdash; 2025</p>
+              <p class="job__loc">Phnom Penh, Cambodia</p>
+            </div>
+          </header>
+
+          <p class="job__lead">My first hands-on role &mdash; and where most of my work came from.</p>
+
+          <h2 class="jobd__h">What I did</h2>
+          <ul class="job__list">
+            <li>Supported daily operations and admin, improving workflow and team coordination.</li>
+            <li>Planned and ran events end-to-end &mdash; logistics, coordination, on-the-ground execution.</li>
+            <li>Designed social media content and marketing materials that grew brand visibility and engagement.</li>
+            <li>Scheduled and managed posts across multiple social platforms.</li>
+            <li>Directed and scripted video content for clear, on-brand storytelling.</li>
+            <li>Created posters, brochures and promotional materials for campaigns and events.</li>
+          </ul>
+        </article>
+
+        <h2 class="jobd__h">Work results &mdash; Content Planning</h2>
+          <div class="jobd__group">
+            <!-- EDIT: write your own description here -->
+            <p class="jobd__group-desc">Monthly content calendars, captions and copy direction that kept Unilinks&rsquo; channels posting consistently.</p>
+            <div class="jobd__soon">
+              <h3 class="jobd__soon-title">Coming soon.</h3>
+              <p>Content planning samples will go here.</p>
+            </div>
+          </div>
+
+        <h2 class="jobd__h">Work results &mdash; Video</h2>
+          <div class="jobd__group">
+            <!-- EDIT: write your own description here -->
+            <p class="jobd__group-desc">Short-form reels I scripted and directed for Unilinks &mdash; clear, on-brand storytelling for students and parents.</p>
+            <div class="videos__grid">
+              <a class="video-card" href="https://www.facebook.com/share/v/14fUxcBi3kv/" target="_blank" rel="noopener">
+                <span class="video-card__art" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </span>
+                <div>
+                  <h4 class="video-card__title">Unilinks Reel <em>No.&nbsp;01</em></h4>
+                  <p class="video-card__meta">Watch on Facebook <span aria-hidden="true">&rarr;</span></p>
+                </div>
+              </a>
+              <a class="video-card" href="https://www.facebook.com/share/v/1E8GpjvhGW/" target="_blank" rel="noopener">
+                <span class="video-card__art" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </span>
+                <div>
+                  <h4 class="video-card__title">Unilinks Reel <em>No.&nbsp;02</em></h4>
+                  <p class="video-card__meta">Watch on Facebook <span aria-hidden="true">&rarr;</span></p>
+                </div>
+              </a>
+            </div>
+          </div>
+
+        <h2 class="jobd__h">Work results &mdash; Events</h2>
+          <div class="jobd__group">
+            <!-- EDIT: write your own description here -->
+            <p class="jobd__group-desc">On the ground at Unilinks events &mdash; coordinating booths, talking to students and running the show from setup to wrap-up.</p>
+            <div class="jobd__grid jobd__grid--wide">
+              <a href="assets/events/event-1.jpg" target="_blank" rel="noopener"><img src="assets/events/event-1.jpg" alt="Unilinks event 1" loading="lazy" /></a>
+              <a href="assets/events/event-2.jpg" target="_blank" rel="noopener"><img src="assets/events/event-2.jpg" alt="Unilinks event 2" loading="lazy" /></a>
+              <a href="assets/events/event-3.jpg" target="_blank" rel="noopener"><img src="assets/events/event-3.jpg" alt="Unilinks event 3" loading="lazy" /></a>
+              <a href="assets/events/event-4.jpg" target="_blank" rel="noopener"><img src="assets/events/event-4.jpg" alt="Unilinks event 4" loading="lazy" /></a>
+              <a href="assets/events/event-5.jpg" target="_blank" rel="noopener"><img src="assets/events/event-5.jpg" alt="Unilinks event 5" loading="lazy" /></a>
+              <a href="assets/events/event-6.jpg" target="_blank" rel="noopener"><img src="assets/events/event-6.jpg" alt="Unilinks event 6" loading="lazy" /></a>
+            </div>
+          </div>
+
+        <h2 class="jobd__h">Work results &mdash; Design</h2>
+          <div class="jobd__group">
+            <h3 class="jobd__group-title">Taiwan Study-Abroad Campaign</h3>
+            <p class="jobd__group-meta">Social series · 2025</p>
+            <p class="jobd__group-desc">A 6-piece social media series promoting Unilinks&rsquo; Taiwan partner programs &mdash; photo-driven layouts in Khmer and English with university and program highlights.</p>
+            <div class="jobd__grid jobd__grid--wide">
+              <a href="assets/work/taiwan/taiwan-1.png" target="_blank" rel="noopener"><img src="assets/work/taiwan/taiwan-1.png" alt="Taiwan Study-Abroad Campaign 1" loading="lazy" /></a>
+              <a href="assets/work/taiwan/taiwan-2.png" target="_blank" rel="noopener"><img src="assets/work/taiwan/taiwan-2.png" alt="Taiwan Study-Abroad Campaign 2" loading="lazy" /></a>
+              <a href="assets/work/taiwan/taiwan-3.png" target="_blank" rel="noopener"><img src="assets/work/taiwan/taiwan-3.png" alt="Taiwan Study-Abroad Campaign 3" loading="lazy" /></a>
+              <a href="assets/work/taiwan/taiwan-4.png" target="_blank" rel="noopener"><img src="assets/work/taiwan/taiwan-4.png" alt="Taiwan Study-Abroad Campaign 4" loading="lazy" /></a>
+              <a href="assets/work/taiwan/taiwan-5.png" target="_blank" rel="noopener"><img src="assets/work/taiwan/taiwan-5.png" alt="Taiwan Study-Abroad Campaign 5" loading="lazy" /></a>
+              <a href="assets/work/taiwan/taiwan-6.png" target="_blank" rel="noopener"><img src="assets/work/taiwan/taiwan-6.png" alt="Taiwan Study-Abroad Campaign 6" loading="lazy" /></a>
+            </div>
+          </div>
+          <div class="jobd__group">
+            <h3 class="jobd__group-title">Mascot Series &mdash; Study Programs</h3>
+            <p class="jobd__group-meta">Illustration series · 2025</p>
+            <p class="jobd__group-desc">An 8-piece character illustration series introducing Unilinks&rsquo; international study programs &mdash; playful mascots paired with country and program flags.</p>
+            <div class="jobd__grid">
+              <a href="assets/work/mascot/mascot-1.png" target="_blank" rel="noopener"><img src="assets/work/mascot/mascot-1.png" alt="Mascot Series — Study Programs 1" loading="lazy" /></a>
+              <a href="assets/work/mascot/mascot-2.png" target="_blank" rel="noopener"><img src="assets/work/mascot/mascot-2.png" alt="Mascot Series — Study Programs 2" loading="lazy" /></a>
+              <a href="assets/work/mascot/mascot-3.png" target="_blank" rel="noopener"><img src="assets/work/mascot/mascot-3.png" alt="Mascot Series — Study Programs 3" loading="lazy" /></a>
+              <a href="assets/work/mascot/mascot-4.png" target="_blank" rel="noopener"><img src="assets/work/mascot/mascot-4.png" alt="Mascot Series — Study Programs 4" loading="lazy" /></a>
+              <a href="assets/work/mascot/mascot-5.png" target="_blank" rel="noopener"><img src="assets/work/mascot/mascot-5.png" alt="Mascot Series — Study Programs 5" loading="lazy" /></a>
+              <a href="assets/work/mascot/mascot-6.png" target="_blank" rel="noopener"><img src="assets/work/mascot/mascot-6.png" alt="Mascot Series — Study Programs 6" loading="lazy" /></a>
+              <a href="assets/work/mascot/mascot-7.png" target="_blank" rel="noopener"><img src="assets/work/mascot/mascot-7.png" alt="Mascot Series — Study Programs 7" loading="lazy" /></a>
+              <a href="assets/work/mascot/mascot-8.png" target="_blank" rel="noopener"><img src="assets/work/mascot/mascot-8.png" alt="Mascot Series — Study Programs 8" loading="lazy" /></a>
+            </div>
+          </div>
+          <div class="jobd__group">
+            <h3 class="jobd__group-title">EMGS Mobile App Launch</h3>
+            <p class="jobd__group-meta">Product launch · 2025</p>
+            <p class="jobd__group-desc">A 5-piece rollout for the EMGS Hub mobile app &mdash; Student Visa (i-Kad), health updates and university info for Cambodian students bound for Malaysia.</p>
+            <div class="jobd__grid">
+              <a href="assets/work/emgs-app/app-1.png" target="_blank" rel="noopener"><img src="assets/work/emgs-app/app-1.png" alt="EMGS Mobile App Launch 1" loading="lazy" /></a>
+              <a href="assets/work/emgs-app/app-2.png" target="_blank" rel="noopener"><img src="assets/work/emgs-app/app-2.png" alt="EMGS Mobile App Launch 2" loading="lazy" /></a>
+              <a href="assets/work/emgs-app/app-3.png" target="_blank" rel="noopener"><img src="assets/work/emgs-app/app-3.png" alt="EMGS Mobile App Launch 3" loading="lazy" /></a>
+              <a href="assets/work/emgs-app/app-4.png" target="_blank" rel="noopener"><img src="assets/work/emgs-app/app-4.png" alt="EMGS Mobile App Launch 4" loading="lazy" /></a>
+              <a href="assets/work/emgs-app/app-5.png" target="_blank" rel="noopener"><img src="assets/work/emgs-app/app-5.png" alt="EMGS Mobile App Launch 5" loading="lazy" /></a>
+            </div>
+          </div>
+          <div class="jobd__group">
+            <h3 class="jobd__group-title">Swineburne @ INTI Partnership</h3>
+            <p class="jobd__group-meta">Campaign · 2026</p>
+            <p class="jobd__group-desc">A 3-piece campaign announcing the Swineburne University at INTI partnership intake for May and August 2026.</p>
+            <div class="jobd__grid">
+              <a href="assets/work/swineburne/swineburne-1.png" target="_blank" rel="noopener"><img src="assets/work/swineburne/swineburne-1.png" alt="Swineburne @ INTI Partnership 1" loading="lazy" /></a>
+              <a href="assets/work/swineburne/swineburne-2.png" target="_blank" rel="noopener"><img src="assets/work/swineburne/swineburne-2.png" alt="Swineburne @ INTI Partnership 2" loading="lazy" /></a>
+              <a href="assets/work/swineburne/swineburne-3.png" target="_blank" rel="noopener"><img src="assets/work/swineburne/swineburne-3.png" alt="Swineburne @ INTI Partnership 3" loading="lazy" /></a>
+            </div>
+          </div>
+          <div class="jobd__group">
+            <h3 class="jobd__group-title">Brand Moments</h3>
+            <p class="jobd__group-meta">Standalone posts · 2025–2026</p>
+            <p class="jobd__group-desc">Standalone seasonal and lifestyle posts &mdash; Khmer New Year greetings, Entertainment-on-tour, and a Malaysia vs Taiwan country comparison.</p>
+            <div class="jobd__grid">
+              <a href="assets/work/brand-moments/entertainment.png" target="_blank" rel="noopener"><img src="assets/work/brand-moments/entertainment.png" alt="Brand Moments 1" loading="lazy" /></a>
+              <a href="assets/work/brand-moments/khmer-new-year.png" target="_blank" rel="noopener"><img src="assets/work/brand-moments/khmer-new-year.png" alt="Brand Moments 2" loading="lazy" /></a>
+              <a href="assets/work/brand-moments/study-malaysia.png" target="_blank" rel="noopener"><img src="assets/work/brand-moments/study-malaysia.png" alt="Brand Moments 3" loading="lazy" /></a>
+            </div>
+          </div>
+
+        <a href="https://www.facebook.com/share/18dfpKaKsn/?mibextid=wwXIfr" target="_blank" rel="noopener" class="work__more-link">
+          <span class="work__more-label">See the full archive</span>
+          <span class="work__more-name">Unilinks Cambodia <span class="work__more-arrow" aria-hidden="true">&nearr;</span></span>
+          <span class="work__more-meta">on Facebook</span>
+        </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">
+        <span class="footer__mark">KS</span>
+        <span class="footer__name">Kang Somaliza</span>
+      </div>
+      <p class="footer__copy" id="v2-footer-copy">&copy; 2026 Kang Somaliza <span class="footer__sep">·</span> Made in Phnom Penh</p>
+      <a href="#top" class="footer__top">Back to top <span aria-hidden="true">↑</span></a>
+    </div>
+  </footer>
+
+  <script src="script.js?v=5"></script>
+  <script type="module" src="v2-site.js"></script>
+  <script type="module" src="v2-job.js"></script>
+</body>
+</html>

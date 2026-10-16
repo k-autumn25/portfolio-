@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Intro preview — Kang / Somaliza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0B0B;
+    --ink: #F1EEE6;
+    --sans: 'Inter', system-ui, sans-serif;
+    --pad-x: clamp(16px, 5vw, 64px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: var(--bg); overflow: hidden; }
+
+  /* The real homepage sits underneath and shows when the intro slides away */
+  .home { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; }
+
+  /* INTRO */
+  .intro {
+    position: fixed; inset: 0; z-index: 5;
+    background: var(--bg); color: var(--ink);
+    font-family: var(--sans);
+    overflow: hidden; cursor: pointer;
+    transition: transform 1s cubic-bezier(.77,0,.18,1);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .intro.is-gone { transform: translateY(-100%); }
+
+  /* Photos */
+  .intro__photo {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    opacity: 0; transform: scale(1.06);
+    transition: opacity .6s ease, transform 1.2s cubic-bezier(.2,.8,.2,1);
+  }
+  .intro__photo::after { content: ""; position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+  .intro[data-show="kang"]     .intro__photo--kang,
+  .intro[data-show="somaliza"] .intro__photo--somaliza { opacity: 1; transform: scale(1); }
+
+  .intro__based {
+    position: absolute; top: 28px; right: var(--pad-x); z-index: 2;
+    font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+  }
+
+  /* Name */
+  .intro__name {
+    position: absolute; z-index: 2;
+    left: var(--pad-x); right: var(--pad-x); top: 50%;
+    transform: translateY(-50%);
+    font-weight: 900; text-transform: uppercase;
+    font-size: clamp(56px, 15vw, 260px); line-height: .9; letter-spacing: -.02em;
+  }
+  .intro__word {
+    display: block; width: max-content; cursor: pointer;
+    color: var(--ink); -webkit-text-stroke: 2px transparent;
+    transition: color .35s ease, -webkit-text-stroke-color .35s ease;
+  }
+  .intro__word--somaliza { margin-left: 13%; }
+  /* The word you touch turns into an outline */
+  .intro[data-show="kang"]     .intro__word--kang,
+  .intro[data-show="somaliza"] .intro__word--somaliza {
+    color: transparent; -webkit-text-stroke-color: var(--ink);
+  }
+  @media (max-width: 700px) {
+    .intro__word--somaliza { margin-left: 6%; }
+    .intro__word { -webkit-text-stroke-width: 1.5px; }
+  }
+
+  /* Letters rise in on load */
+  .intro__word span { display: inline-block; opacity: 0; transform: translateY(60%); animation: rise .9s cubic-bezier(.2,.8,.2,1) forwards; animation-delay: calc(.15s + var(--i) * 45ms); }
+  @keyframes rise { to { opacity: 1; transform: none; } }
+
+  /* Preview-only button */
+  .replay {
+    position: fixed; z-index: 10; right: 16px; bottom: 16px;
+    font: 500 12px var(--sans); color: #1A1A14; background: #B7C28A;
+    border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer;
+    opacity: 0; pointer-events: none; transition: opacity .3s ease;
+  }
+  .replay.is-on { opacity: 1; pointer-events: auto; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .intro, .intro__photo, .intro__word span { transition: none !important; animation: none !important; opacity: 1; transform: none; }
+    .intro__photo { opacity: 0; }
+    .intro.is-gone { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<iframe class="home" src="hero-preview.html" title="Homepage"></iframe>
+
+<div class="intro" id="intro" data-show="none" role="button" aria-label="Kang Somaliza — tap to enter">
+  <!-- Swap these two image paths for your real photos -->
+  <div class="intro__photo intro__photo--kang"     style="background-image: url('assets/intro/kang.jpg'); background-position: 52% 60%"></div>
+  <div class="intro__photo intro__photo--somaliza" style="background-image: url('assets/intro/somaliza.jpg'); background-position: center 30%"></div>
+
+  <p class="intro__based">Based in Phnom Penh, Cambodia</p>
+
+  <h1 class="intro__name">
+    <span class="intro__word intro__word--kang" data-word="kang"></span>
+    <span class="intro__word intro__word--somaliza" data-word="somaliza"></span>
+  </h1>
+</div>
+
+<button class="replay" id="replay">↺ Show intro again</button>
+
+<script>
+  const intro = document.getElementById("intro");
+  const replay = document.getElementById("replay");
+
+  // Split each word into letters so they can rise in
+  intro.querySelectorAll(".intro__word").forEach((w, wi) => {
+    const text = w.dataset.word.toUpperCase();
+    w.innerHTML = [...text].map((c, i) => `<span style="--i:${i + wi * 4}">${c}</span>`).join("");
+  });
+
+  const show = (which) => { intro.dataset.show = which; };
+  const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+  // Computer: hovering a word shows its photo
+  if (canHover) {
+    intro.querySelectorAll(".intro__word").forEach((w) => {
+      w.addEventListener("mouseenter", () => show(w.dataset.word));
+      w.addEventListener("mouseleave", () => show("none"));
+    });
+  }
+
+  // Tap / click: a word shows its photo, anywhere else enters the site
+  intro.addEventListener("click", (e) => {
+    const w = e.target.closest(".intro__word");
+    if (w) { show(w.dataset.word); return; }
+    enter();
+  });
+
+  // Scrolling down or pressing Enter also goes in
+  intro.addEventListener("wheel", (e) => { if (e.deltaY > 20) enter(); }, { passive: true });
+  document.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === "ArrowDown") enter(); });
+
+  function enter() {
+    if (intro.classList.contains("is-gone")) return;
+    intro.classList.add("is-gone");
+    setTimeout(() => replay.classList.add("is-on"), 1000);
+  }
+
+  replay.addEventListener("click", () => {
+    replay.classList.remove("is-on");
+    show("none");
+    intro.classList.remove("is-gone");
+    // restart the letter animation
+    intro.querySelectorAll(".intro__word span").forEach((s) => { s.style.animation = "none"; void s.offsetWidth; s.style.animation = ""; });
+  });
+</script>
+<script type="module">
+  // Photos and text saved in the new admin (falls back to what's written above)
+  import { loadHome, resolveImage } from "./v2-data.js";
+  const home = await loadHome();
+  const setPhoto = async (cls, ref) => {
+    const url = await resolveImage(ref);
+    if (url) document.querySelector(cls).style.backgroundImage = `url("${url}")`;
+  };
+  setPhoto(".intro__photo--kang", home.intro.kangPhoto);
+  setPhoto(".intro__photo--somaliza", home.intro.somalizaPhoto);
+  document.querySelector(".intro__based").textContent = home.intro.based;
+</script>
+</body>
+</html>

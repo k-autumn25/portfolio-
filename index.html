@@ -120,6 +120,8 @@
     .nav__toggle { display: flex; }
     .nav__cta { display: none; }
     .nav__links-cta { display: block; }
+    /* The blur traps the fixed drawer inside the bar's height, so drop it while open */
+    .nav.is-open { backdrop-filter: none; -webkit-backdrop-filter: none; background: #0E0E0E; }
 
     .nav__links {
       position: fixed;

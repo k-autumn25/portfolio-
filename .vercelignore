@@ -4,3 +4,4 @@
 # Dev/tooling artifacts
 .claude/
 .firebase/
+firebase-debug.log

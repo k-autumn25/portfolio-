@@ -1769,7 +1769,7 @@ button { font: inherit; }
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: clamp(40px, 6vw, 88px);
-  align-items: end;
+  align-items: start;
   margin-bottom: clamp(60px, 8vw, 100px);
 }
 .contact__title {

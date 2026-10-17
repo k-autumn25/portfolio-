@@ -216,15 +216,16 @@ button { font: inherit; }
     position: fixed;
     top: var(--nav-h);
     right: 0;
-    bottom: 0;
     width: min(320px, 82vw);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom-left-radius: 16px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
     background: #1A1A1A;
     border-left: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 28px var(--pad-x) 40px;
+    padding: 16px var(--pad-x) 12px;
     font-size: 17px;
     letter-spacing: 0.04em;
     text-transform: none;

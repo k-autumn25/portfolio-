@@ -28,7 +28,8 @@
     .about__grid { align-items: center; }
     .about__photo { margin: 0; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 6px; background: var(--cream-2); }
     .about__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    @media (max-width: 900px) { .about__photo { max-width: 420px; } }
+    /* Phone/tablet: photo first, centered above the text */
+    @media (max-width: 900px) { .about__photo { order: -1; width: 100%; max-width: 360px; margin: 0 auto; } }
   </style>
   <script>
   </script>

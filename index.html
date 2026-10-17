@@ -1062,7 +1062,6 @@
 </style>
 <style>
   /* INTRO — shown once, on the first visit */
-  .intro-seen .intro { display: none; }
   html.intro-on, html.intro-on body { overflow: hidden; }
   .intro {
     position: fixed; inset: 0; z-index: 9999;
@@ -1126,9 +1125,8 @@
   }
 </style>
 <script>
-  // Show the intro only once per visitor
-  // (add ?intro to the address to see it again)
-  try { if (localStorage.getItem('introSeen') && !/[?&]intro\b/.test(location.search)) document.documentElement.classList.add('intro-seen'); else document.documentElement.classList.add('intro-on'); } catch (e) { document.documentElement.classList.add('intro-seen'); }
+  // The intro plays every time the homepage loads
+  document.documentElement.classList.add('intro-on');
 </script>
 </head>
 <body>
@@ -1180,7 +1178,6 @@
   function enter() {
     if (intro.classList.contains("is-gone")) return;
     intro.classList.add("is-gone");
-    try { localStorage.setItem('introSeen', '1'); } catch (e) {}
     setTimeout(() => { document.documentElement.classList.remove('intro-on'); intro.remove(); }, 1150);
   }
   }

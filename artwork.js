@@ -1,14 +1,6 @@
 // Artwork index (artwork.html) + single project page (project.html?p=<id>).
-// Renders from the seed data right away, then swaps in the live Firestore
-// "projects" collection (the one edited in Admin → Projects).
-import { db } from "./firebase-config.js";
-import {
-  collection,
-  getDocs,
-  query,
-  orderBy,
-} from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
-import { SEED } from "./seed-data.js";
+// Lists every design project from every job in the new admin (Experience → Jobs → Design work).
+import { loadExperience, allDesignProjects, splitInfo, resolveImages } from "./v2-data.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -141,17 +133,16 @@ function render(projects, isFinal) {
 }
 
 async function loadProjects() {
-  try {
-    const snap = await getDocs(query(collection(db, "projects"), orderBy("order", "asc")));
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  } catch (e) {
-    console.warn("[artwork] Failed to load projects:", e.message);
-    return [];
-  }
+  const { jobs } = await loadExperience();
+  return Promise.all(allDesignProjects(jobs).map(async (p) => {
+    const { type, year } = splitInfo(p.info);
+    return {
+      id: p.id, title: p.name, desc: p.desc, ratio: p.shape || "square",
+      meta: [p.company, type, year].filter(Boolean).join(" / "),
+      images: await resolveImages(p.images),
+    };
+  }));
 }
 
-render(SEED.projects, false);
 wireHoverPreview();
-loadProjects().then((live) => {
-  render(live.length ? live : SEED.projects, true);
-});
+loadProjects().then((projects) => render(projects, true));

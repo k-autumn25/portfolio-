@@ -2,6 +2,17 @@
 // both edited in the new admin (Contact → Footer, Settings → Resume).
 import { loadContact, loadDocData, CV_DOC, contactLink, esc } from "./v2-data.js";
 
+// Links saved in the admin before go-live may still point at the old preview
+// files (e.g. "artwork-new-preview.html"). Send them to the real pages.
+const PREVIEW_LINK = /\b([a-z0-9]+(?:-[a-z0-9]+)*?)(-new)?-preview\.html/;
+const fixLinks = (root) => root.querySelectorAll?.('a[href*="-preview.html"]').forEach((a) => {
+  a.setAttribute("href", a.getAttribute("href").replace(PREVIEW_LINK, (_, name) =>
+    name === "hero" || name === "intro" ? "index.html" : `${name}.html`));
+});
+fixLinks(document);
+new MutationObserver(() => fixLinks(document))
+  .observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["href"] });
+
 const contact = await loadContact();
 
 const footer = document.getElementById("v2-footer-copy");

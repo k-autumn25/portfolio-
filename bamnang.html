@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Events — Kang Somaliza</title>
+  <title>Bamnang — Kang Somaliza</title>
   <meta name="description" content="Services, selected work, and past roles by Kang Somaliza — designer, content creator, and operations support based in Phnom Penh." />
 
   <meta property="og:title" content="Experience — Kang Somaliza" />
@@ -78,14 +78,6 @@
     .jobd__grid a:hover img { transform: scale(1.04); }
     /* Preview: plain "KS" logo, same as the homepage */
     .nav__brand--ks { font-weight: 500; font-size: 18px; color: var(--ink); text-decoration: none; }
-    .ev-title { font-size: clamp(48px, 8vw, 120px); font-weight: 700; letter-spacing: -0.03em; line-height: 0.95; color: var(--ink); margin-bottom: 18px; }
-    .ev-lead { font-size: clamp(16px, 1.5vw, 20px); color: var(--ink-2); max-width: 56ch; line-height: 1.6; }
-    .ev { padding-top: clamp(56px, 7vw, 96px); margin-top: clamp(56px, 7vw, 96px); border-top: 1px solid var(--line); }
-    .ev__head { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; flex-wrap: wrap; margin-bottom: 14px; }
-    .ev__name { font-size: clamp(30px, 4vw, 56px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; color: var(--ink); }
-    .ev__when { font-size: 14px; color: var(--ink-3); }
-    .ev__more { display: inline-block; margin: 6px 0 26px; font-size: 14px; color: var(--olive); text-decoration: none; }
-    .ev__more:hover { text-decoration: underline; }
   </style>
   <script>
   </script>
@@ -101,12 +93,12 @@
 
   <header class="nav" id="nav">
     <div class="nav__inner">
-      <a href="hero-preview.html" class="nav__brand nav__brand--ks" aria-label="Kang Somaliza — home">KS</a>
+      <a href="index.html" class="nav__brand nav__brand--ks" aria-label="Kang Somaliza — home">KS</a>
 
       <nav class="nav__links" aria-label="Primary">
-        <a href="about-preview.html">About</a>
-        <a href="experience-preview.html">Experience</a>
-        <a href="contact-preview.html">Contact</a>
+        <a href="about.html">About</a>
+        <a href="experience.html">Experience</a>
+        <a href="contact.html">Contact</a>
       </nav>
 
 
@@ -119,37 +111,35 @@
   <main id="top">
     <section class="section jobd">
       <div class="section__inner">
-        <a class="jobd__back" href="hero-preview.html">&larr; Back to Home</a>
+        <a class="jobd__back" href="experience.html#job">&larr; Back to Experience</a>
 
-        <h1 class="ev-title">Events.</h1>
-        <p class="ev-lead">On the ground at every event I&rsquo;ve been part of &mdash; from Unilinks fairs to the Digital Connect Meet Up.</p>
+        <div id="v2-job" data-job="bamnang">
 
-        <div id="v2-events">
-        <div class="ev">
-          <div class="ev__head">
-            <h2 class="ev__name">Unilinks Global Education</h2>
-            <span class="ev__when">2024 &mdash; 2025 &middot; Phnom Penh</span>
-          </div>
-          <p class="jobd__group-desc">On the ground at Unilinks events &mdash; coordinating booths, talking to students about study-abroad opportunities, and capturing the energy of every fair and gathering.</p>
-          <a class="ev__more" href="job-preview.html">See my work at Unilinks &rarr;</a>
-            <div class="jobd__grid jobd__grid--wide">
-              <a href="assets/events/event-1.jpg" target="_blank" rel="noopener"><img src="assets/events/event-1.jpg" alt="Unilinks event 1" loading="lazy" /></a>
-              <a href="assets/events/event-2.jpg" target="_blank" rel="noopener"><img src="assets/events/event-2.jpg" alt="Unilinks event 2" loading="lazy" /></a>
-              <a href="assets/events/event-3.jpg" target="_blank" rel="noopener"><img src="assets/events/event-3.jpg" alt="Unilinks event 3" loading="lazy" /></a>
-              <a href="assets/events/event-4.jpg" target="_blank" rel="noopener"><img src="assets/events/event-4.jpg" alt="Unilinks event 4" loading="lazy" /></a>
-              <a href="assets/events/event-5.jpg" target="_blank" rel="noopener"><img src="assets/events/event-5.jpg" alt="Unilinks event 5" loading="lazy" /></a>
-              <a href="assets/events/event-6.jpg" target="_blank" rel="noopener"><img src="assets/events/event-6.jpg" alt="Unilinks event 6" loading="lazy" /></a>
+        <article class="job">
+          <header class="job__head">
+            <div class="job__company">
+              <h1 class="job__name">Bamnang</h1>
+              <p class="job__role">Digital Connect Meet Up</p>
             </div>
-        </div>
+            <div class="job__when">
+              <p class="job__period">Aug 2025 &mdash; Oct 2025</p>
+              <p class="job__loc">Phnom Penh, Cambodia</p>
+            </div>
+          </header>
 
-        <div class="ev">
-          <div class="ev__head">
-            <h2 class="ev__name">Bamnang &mdash; Digital Connect Meet Up</h2>
-            <span class="ev__when">Aug &mdash; Oct 2025 &middot; Phnom Penh</span>
-          </div>
-          <!-- EDIT: write your own description here -->
-          <p class="jobd__group-desc">Moments from the Digital Connect Meet Up &mdash; learning from experts and meeting the community.</p>
-          <a class="ev__more" href="bamnang-preview.html">See more about Bamnang &rarr;</a>
+          <p class="job__lead">Last year&rsquo;s event provided me with a comprehensive education on current digital trends.</p>
+
+          <h2 class="jobd__h">What I did</h2>
+          <!-- EDIT: add more points here -->
+          <ul class="job__list">
+            <li>I really enjoy the Digital Connect Meet Up. Besides learning so many new things from the experts, it was great to feel part of a real community and meet so many cool, talented people. Along the way, I&rsquo;ve even started working with a new group of friends on an AI project to help improve things in Cambodia!</li>
+          </ul>
+        </article>
+
+        <h2 class="jobd__h">Work results &mdash; Events</h2>
+          <div class="jobd__group">
+            <!-- EDIT: write your own description here -->
+            <p class="jobd__group-desc">Moments from the Digital Connect Meet Up &mdash; learning from experts and meeting the community.</p>
             <div class="jobd__grid jobd__grid--wide">
               <a href="assets/Bamnang%20event/photo_1_2026-05-14_21-10-30.jpg" target="_blank" rel="noopener"><img src="assets/Bamnang%20event/photo_1_2026-05-14_21-10-30.jpg" alt="Digital Connect Meet Up photo 1" loading="lazy" /></a>
               <a href="assets/Bamnang%20event/photo_2_2026-05-14_21-10-30.jpg" target="_blank" rel="noopener"><img src="assets/Bamnang%20event/photo_2_2026-05-14_21-10-30.jpg" alt="Digital Connect Meet Up photo 2" loading="lazy" /></a>
@@ -157,7 +147,7 @@
               <a href="assets/Bamnang%20event/photo_4_2026-05-14_21-10-30.jpg" target="_blank" rel="noopener"><img src="assets/Bamnang%20event/photo_4_2026-05-14_21-10-30.jpg" alt="Digital Connect Meet Up photo 4" loading="lazy" /></a>
               <a href="assets/Bamnang%20event/photo_5_2026-05-14_21-10-30.jpg" target="_blank" rel="noopener"><img src="assets/Bamnang%20event/photo_5_2026-05-14_21-10-30.jpg" alt="Digital Connect Meet Up photo 5" loading="lazy" /></a>
             </div>
-        </div>
+          </div>
         </div>
       </div>
     </section>
@@ -175,28 +165,7 @@
   </footer>
 
   <script src="script.js?v=5"></script>
-  <script type="module">
-    // One section per job that has event photos (Experience → Jobs → Event photos)
-    import { loadExperience, resolveImages, esc } from "./v2-data.js";
-    const { jobs } = await loadExperience();
-    const withEvents = jobs.filter((j) => j.events.images.length);
-    const html = await Promise.all(withEvents.map(async (j) => {
-      const urls = await resolveImages(j.events.images);
-      return `
-        <div class="ev">
-          <div class="ev__head">
-            <h2 class="ev__name">${esc(j.company)}${j.role ? ` &mdash; ${esc(j.role)}` : ""}</h2>
-            <span class="ev__when">${esc([j.years, j.place].filter(Boolean).join(" · "))}</span>
-          </div>
-          ${j.events.desc ? `<p class="jobd__group-desc">${esc(j.events.desc)}</p>` : ""}
-          <a class="ev__more" href="job-preview.html?job=${encodeURIComponent(j.id)}">See my work at ${esc(j.company)} &rarr;</a>
-          <div class="jobd__grid jobd__grid--wide">${urls.map((u, i) =>
-            `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="${esc(j.company)} event ${i + 1}" loading="lazy" /></a>`).join("")}</div>
-        </div>`;
-    }));
-    document.getElementById("v2-events").innerHTML = html.join("") ||
-      '<div class="jobd__soon" style="margin-top:48px"><h3 class="jobd__soon-title">Coming soon.</h3><p>Event photos will go here.</p></div>';
-  </script>
   <script type="module" src="v2-site.js"></script>
+  <script type="module" src="v2-job.js"></script>
 </body>
 </html>

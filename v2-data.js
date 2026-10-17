@@ -1,4 +1,4 @@
-// Shared by the new admin (admin-preview.html) and the redesigned preview pages.
+// Shared by the new admin (admin.html) and the redesigned preview pages.
 // New data lives in its own Firestore docs (site_content/v2_*), so the live
 // site and the old admin are never affected.
 import { db } from "./firebase-config.js";
@@ -21,7 +21,7 @@ export const DEFAULT_HOME = {
   work: [
     {
       name: "Art*work*", small: "Campaigns · Illustration · Brand posts", tag: "5 projects · 25 pieces",
-      years: "2025–26", link: "artwork-new-preview.html", fill: false,
+      years: "2025–26", link: "artwork.html", fill: false,
       images: [
         "taiwan/taiwan-1", "mascot/mascot-1", "emgs-app/app-1", "swineburne/swineburne-1", "brand-moments/khmer-new-year",
         "taiwan/taiwan-3", "mascot/mascot-4", "emgs-app/app-2", "brand-moments/study-malaysia", "mascot/mascot-7",
@@ -29,7 +29,7 @@ export const DEFAULT_HOME = {
     },
     {
       name: "*Events*", small: "Event coordination · On the ground", tag: "Unilinks · Bamnang",
-      years: "2025–26", link: "events-new-preview.html", fill: true,
+      years: "2025–26", link: "events.html", fill: true,
       images: [
         ...[1, 2, 3, 4, 5, 6].map((n) => `assets/events/event-${n}.jpg`),
         ...[1, 2, 3, 4, 5].map((n) => `assets/Bamnang%20event/photo_${n}_2026-05-14_21-10-30.jpg`),
@@ -37,7 +37,7 @@ export const DEFAULT_HOME = {
     },
     {
       name: "Content *Planning*", small: "Editorial calendars · Campaign rollouts", tag: "Social strategy",
-      years: "2025–26", link: "content-planning-new-preview.html", fill: false,
+      years: "2025–26", link: "content-planning.html", fill: false,
       images: [],
     },
   ],

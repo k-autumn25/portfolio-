@@ -1,4 +1,4 @@
-// Draws one job's page (job-preview.html?job=<id>) from the new admin's Experience → Jobs.
+// Draws one job's page (job.html?job=<id>) from the new admin's Experience → Jobs.
 import { loadExperience, resolveImages, esc } from "./v2-data.js";
 
 const root = document.getElementById("v2-job");

@@ -1065,10 +1065,12 @@
     background: #0B0B0B; color: #F1EEE6;
     font-family: 'Inter', system-ui, sans-serif;
     overflow: hidden; cursor: pointer;
-    transition: transform 1s cubic-bezier(.77,0,.18,1);
+    transform-origin: center;
+    transition: transform 1.1s cubic-bezier(.7,0,.2,1), opacity .6s ease .35s;
     -webkit-tap-highlight-color: transparent;
   }
-  .intro.is-gone { transform: translateY(-100%); }
+  /* Entering: the intro zooms in toward you and fades, showing the homepage */
+  .intro.is-gone { transform: scale(2.6); opacity: 0; pointer-events: none; }
 
   /* Photos */
   .intro__photo {
@@ -1121,7 +1123,8 @@
 </style>
 <script>
   // Show the intro only once per visitor
-  try { if (localStorage.getItem('introSeen')) document.documentElement.classList.add('intro-seen'); else document.documentElement.classList.add('intro-on'); } catch (e) { document.documentElement.classList.add('intro-seen'); }
+  // (add ?intro to the address to see it again)
+  try { if (localStorage.getItem('introSeen') && !/[?&]intro\b/.test(location.search)) document.documentElement.classList.add('intro-seen'); else document.documentElement.classList.add('intro-on'); } catch (e) { document.documentElement.classList.add('intro-seen'); }
 </script>
 </head>
 <body>
@@ -1158,10 +1161,11 @@
     });
   }
 
-  // Tap / click: a word shows its photo, anywhere else enters the site
+  // Click anywhere enters the site. On a phone, the first tap on a word
+  // shows its photo and a second tap goes in.
   intro.addEventListener("click", (e) => {
     const w = e.target.closest(".intro__word");
-    if (w) { show(w.dataset.word); return; }
+    if (w && !canHover && intro.dataset.show !== w.dataset.word) { show(w.dataset.word); return; }
     enter();
   });
 
@@ -1173,7 +1177,7 @@
     if (intro.classList.contains("is-gone")) return;
     intro.classList.add("is-gone");
     try { localStorage.setItem('introSeen', '1'); } catch (e) {}
-    setTimeout(() => { document.documentElement.classList.remove('intro-on'); intro.remove(); }, 1000);
+    setTimeout(() => { document.documentElement.classList.remove('intro-on'); intro.remove(); }, 1150);
   }
   }
 </script>
